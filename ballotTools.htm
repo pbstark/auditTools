@@ -7,21 +7,21 @@
 <head>
 <link rel="shortcut icon" href="../Pics/vote.ico"/>
 <link rel="shortcut icon" href="../../Pics/vote.ico"/>
-<link rel="stylesheet" type="text/css" href="../../pbsDefault.css"/>
+<link rel="stylesheet" type="text/css" href="../../../pbsDefault.css"/>
 <link rel="stylesheet" type="text/css" href="../pbsDefault.css"/>
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-	pageModDate = "20 March 2014 12:53:59 PDT";
+	pageModDate = "12 August 2014 12:53:59 PDT";
 	// copyright 2011&ndash;2014 by P.B. Stark, statistics.berkeley.edu/~stark, Hriday, Rachel.
     // All rights reserved.
 // -->
 </script>
 
-<script type="text/javascript" src="../../Java/Jquery/Current/jquery.min.js"></script>
-<script type="text/javascript" src="../../Java/Jquery/Current/jquery.flot.js"></script>
-<script type="text/javascript" src="../../Java/Jquery/Current/sha256.js"></script>
-<script type="text/javascript" src="../../Java/Jquery/Current/BigInt.js"></script>
+<script type="text/javascript" src="../../../Java/Jquery/Current/jquery.min.js"></script>
+<script type="text/javascript" src="../../../Java/Jquery/Current/jquery.flot.js"></script>
+<script type="text/javascript" src="../../../Java/Jquery/Current/sha256.js"></script>
+<script type="text/javascript" src="../../../Java/Jquery/Current/BigInt.js"></script>
 
 <script type="text/javascript" src="../Java/Jquery/Current/jquery.min.js"></script>
 <script type="text/javascript" src="../Java/Jquery/Current/jquery.flot.js"></script>
@@ -73,19 +73,26 @@
       $("#addContestButton").click(function(){addContest();});
       $("#removeContestButton").click(function(){removeContest();});
       $("input[type=text]").focus(function(){this.select();});
-      $("#roundUp1").change(function(){sampleSizeEst();findNmin();});
-      $("#roundUp2").change(function(){sampleSizeEst();findNmin();});
       $("#startSize").click(function(){sampleSizeEst();findNmin();});
       $("#byMargin").change(function(){plotSample();});
+      $("#risk").change(function(){updateVotes();});
+      $("#nextItem").click(function(){nextSample();});
+      $("#reset").click(function(){resetMe();});
+      $("#voteForContest").change(function(){updateVotes();});
+      $("#showSequence").change(function(){writeList();});
+      $("#showHash").change(function(){writeList();});
+      $("#lookUpBallot").click(function(){
+            lookUpBallots($('#ballotList').val().split(',').sort(numberLessThan), true);
+      });
 
-
+   });
 // ------------------------------------
         var candidates = [];
         var errBallots = [];
         var names = [];
         var ballots;
 
-		function addContest() {
+		function addContest() {  // adds a contest
 		    candidates.push([]);
 		    names.push([]);
 		    var conStr = (candidates.length-1).toString();
@@ -95,7 +102,7 @@
 		              '<label for="contestName' + conStr + '">Contest name: </label>' +
 		              '<input type="text" size="80" id="contestName' + conStr + '" class="contestName" /><br />' +
 		              '<label for="voteForContest' + conStr +  '">Winners:&nbsp;</label>' +
-		              '<select id="voteForContest' + conStr + '" onchange="updateVotes();">' +
+		              '<select id="voteForContest' + conStr + '">' +
 		                 '<option value="1">1</option>' +
 		                 '<option value="2">2</option>' +
 		                 '<option value="3">3</option>' +
@@ -130,7 +137,7 @@
 		    return(true);
 		}
 
-		function removeContest() {
+		function removeContest() {  // removes most recently added contest
 		    var conStr = (candidates.length-1).toString();
 		    $("#hrCon" + conStr).remove();
 		    $("#contest" + conStr).remove();
@@ -142,7 +149,7 @@
 		}
 
 
-		function addCandidate(contest) {
+		function addCandidate(contest) {  // adds a candidate to the most recently added contest
             candidates[contest].push(0);
 		    var theCandidate = (parseInt(contest)+1).toString() + '_' + candidates[contest].length.toString();
 		    return('<div class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
@@ -160,8 +167,10 @@
 		sample[0] = new Array();
 		sample[1] = new Array();
 		sample[2] = new Array();
+		var winner = new Array();
+		var loser = new Array();
 
-		function hashMe() {
+		function hashMe() {  // hashes the next sequence number
 			hasher = new jsSHA($("#seedValue").val() + "," +
 			                   $("#samNum").val(), "ASCII");
 			$("#nObj").val(parseInt($("#nObj").val()));
@@ -188,7 +197,7 @@
 			}
 		}
 
-        function writeList() {
+        function writeList() {  // writes the list of ballots selected
             if ($("#showSequence").prop('checked') &
                    $("#showHash").prop('checked') ) {
                 $("#list").val('sequence_number, hash value, ballot\n' + arrayToString(sample));
@@ -203,13 +212,12 @@
         }
 
 
-
-		function startMe() {
+		function startMe() {   // initialize
 		    clearList();
 		    hashMe();
 		}
 
-		function clearList() {
+		function clearList() {  // clear the lists
 		    sample = new Array(3);
 		    sample[0] = new Array();
 		    sample[1] = new Array();
@@ -221,12 +229,12 @@
 		    $("#duplicates").val('');
 		}
 
-		function resetMe() {
+		function resetMe() {  // reset
 		    clearList();
 		    $("#samNum").val('0');
         }
 
-		function nextSample() {
+		function nextSample() {  // draws the next sample, of #samMany ballots
 		    for (var i=0; i < parseInt($("#samMany").val()); i++) {
 		        $("#samNum").val(parseInt($("#samNum").val()) + 1);
 		        hashMe();
@@ -234,53 +242,8 @@
 		    }
 		}
 
-    gamma = 1.03905;
-    alpha = 0.1;
-
-
-    function nmin(alpha, gamma, m, o1, o2, u1, u2) {
-        return(Math.max(
-                    o1+o2+u1+u1,
-                    Math.ceil(-2*gamma*( Math.log(alpha) +
-                                         o1*Math.log(1-1/(2*gamma)) +
-                                         o2*Math.log(1 - 1/gamma) +
-                                         u1*Math.log(1+1/(2*gamma)) +
-                                         u2*Math.log(1+1/gamma)) / m
-                             )
-                        )
-                );
-    }
-
-
-    function nminFromRates(alpha, gamma, m, r1, r2, s1, s2, roundUp1, roundUp2) {
-        var n0 = -2*gamma*Math.log(alpha) /
-                      (m + 2*gamma*(r1*Math.log(1-1/(2*gamma)) +
-                       r2*Math.log(1 - 1/gamma) + s1*Math.log(1+1/(2*gamma)) + s2*Math.log(1+1/gamma))
-                      );
-        var o1, o2, u1, u2;
-        for (var i=0; i < 3; i++) {
-            if (roundUp1) {
-                 o1 = Math.ceil(r1*n0);
-                 u1 = Math.ceil(s1*n0);
-            } else {
-                 o1 = Math.round(r1*n0);
-                 u1 = Math.round(s1*n0);
-
-            }
-            if (roundUp2) {
-                 o2 = Math.ceil(r2*n0);
-                 u2 = Math.ceil(s2*n0);
-            } else {
-                 o2 = Math.round(r2*n0);
-                 u2 = Math.round(s2*n0);
-            }
-            n0 = nmin(alpha, gamma, m, o1, o2, u1, u2);
-        }
-        return(n0);
-    }
-
-
     var minMargin;
+    var testStatistics;
 
     function findMinMargin() {
         ballots = parseInt($("#nBallots").val());
@@ -292,6 +255,7 @@
         var ballOk = !isNaN(ballots);
         var opsOk = true;
         var votesOk = true;
+        var asn = Number.NaN;
         try {
             for (var i=0; i < candidates.length; i++) {
                var cani = parseInt($("#voteForContest" + i.toString()).val());
@@ -317,17 +281,41 @@
             }
         } catch(e) {
            minMargin = 'undefined';
+           asn = 'undefined';
            alert(e);
         }
         if (!opsOk | isNaN(minMargin)) {
             minMargin = 'undefined';
+            asn = 'undefined';
             $("#theDilutedMargin").text('Diluted margin: undefined.');
             $("#theMargin").text('Smallest margin (votes): undefined. ');
+            $("#asn").text('Expected sample size: undefined.  ');
         } else {
             $("#theMargin").text('Smallest margin (votes): ' + commify(minMargin) + '. ');
             $("#theDilutedMargin").text(' Diluted margin: ' + commify(doubleToStr(100*minMargin/ballots,2)) + '%. ');
+            $("#asn").text('Expected sample size: undefined: ' + commify(Math.ceil(asn)) + '. ');
         }
         return(opsOk & votesOk & ballOk);
+    }
+
+    function asn(risk, ballots, vw, vl) {  // returns Wald's "average sample number" (ASN)
+        /* risk = risk limit
+           ballots = total ballots in the contest
+           vw = ballots cast for the winner of the pair
+           vl = ballots cast for the lower of the pair
+        */
+        if (vw > vl) {
+            sw = vw/(vw+vl);
+            zw = Math.log(0.5*sw);
+            zl = Math.log(0.5*(1-sw));
+            pw = vw/ballots;
+            pl = vl/ballots;
+            expect = (Math.log(1.0/risk) + zw/2)/((1.0 - (vi + vv - vw - vl)/(totv))*(pw*zw + pl*zl));
+        } else {
+            expect = 'undefined';
+            alert('Error: Loser reported to have more votes than winner!');
+        }
+        return(expect);
     }
 
     function updateVotes() {
@@ -338,7 +326,6 @@
 
     function clearSampleSizes() {
         $('#startSampleSize').html('&hellip;');
-        $('#stopSampleSize').html('&hellip;');
         $('#auditComplete').html('&nbsp;Audit incomplete&nbsp;');
         $('#auditComplete').css('backgroundColor','#E55');
         return(true);
@@ -368,12 +355,8 @@
             try {
               var m = minMargin/parseInt($("#nBallots").val());
               var risk = parsePercent($("#risk").val());
-              var r1 = $("#rateOneOver").val();
-              var r2 = $("#rateTwoOver").val();
-              var s1 = $("#rateOneUnder").val();
-              var s2 = $("#rateTwoUnder").val();
-              n = nminFromRates(risk, gamma, m, r1, r2, s1, s2,
-                    $("#roundUp1").prop('checked'), $("#roundUp2").prop('checked'));
+              n = 0;
+              // FIX ME! TODO
               $("#startSampleSize").text(' ' + n.toString() + '.');
               $("#samMany").val(n.toString());
             } catch(e) {
@@ -407,41 +390,7 @@
             try {
               var m = minMargin/parseInt($("#nBallots").val());
               var risk = parsePercent($("#risk").val());
-              var o1 = parseInt($("#oneOver").val());
-              var o2 = parseInt($("#twoOver").val());
-              var u1 = parseInt($("#oneUnder").val());
-              var u2 = parseInt($("#twoUnder").val());
-              var samSize = $('#samNum').val();
-              if (samSize > 0) {
-                  var r1 = o1/samSize;
-                  var r2 = o2/samSize;
-                  var s1 = u1/samSize;
-                  var s2 = u2/samSize;
-                  $('#obsRateOneOver').html('Rate: ' + doubleToStr(r1,4));
-                  $('#obsRateTwoOver').html('Rate: ' + doubleToStr(r2,4));
-                  $('#obsRateOneUnder').html('Rate: ' + doubleToStr(s1,4));
-                  $('#obsRateTwoUnder').html('Rate: ' + doubleToStr(s2,4));
-                  n = nmin(risk, gamma, m, o1, o2, u1, u2);
-                  nf = nminFromRates(risk, gamma, m, r1, r2, s1, s2, $("#roundUp1").prop('checked'), $("#roundUp2").prop('checked'));
-                  $("#stopSampleSize").text(' If no more differences are observed: ' + n.toString() + '. ');
-                  $("#estStopSampleSize").html(' If differences continue at the same rates: ' + nf.toString() + '. ');
-                  $("#additionalBallots").html(' Estimated additional ballots if difference rates stay the same: ' + Math.max(0, nf - n).toString() + '.');
-                  if (samSize >= n) {
-                       $('#auditComplete').html('&nbsp;Audit complete&nbsp;');
-                       $('#auditComplete').css('backgroundColor','#5E5');
-                  }
-               } else {
-                  $('#obsRateOneOver').html('Rate: &hellip; ');
-                  $('#obsRateTwoOver').html('Rate: &hellip; ');
-                  $('#obsRateOneUnder').html('Rate: &hellip; ');
-                  $('#obsRateTwoUnder').html('Rate: &hellip; ');
-                  n = nmin(risk, gamma, m, o1, o2, u1, u2);
-                  $("#stopSampleSize").text(' If no more differences are observed: ' + n.toString() + '. ');
-                  $("#estStopSampleSize").html(' If differences continue at the same rates: &hellip; . ');
-                  $("#additionalBallots").html(' Estimated additional ballots if difference rates stay the same: &hellip; .');
-                  $('#auditComplete').html('&nbsp;Audit incomplete&nbsp;');
-                 $('#auditComplete').css('backgroundColor','#E55');
-               }
+              // n = asn(risk, ); FIX ME!
             } catch(e) {
                alert(e);
             }
@@ -451,9 +400,6 @@
     }
 
     function clearStops() {
-         $("#stopSampleSize").html(' If no more differences are observed: &hellip;');
-         $("#estStopSampleSize").html(' If differences continue at the same rates: &hellip; . ');
-         $("#additionalBallots").html('Estimated additional ballots if difference rates stay the same: &hellip; ');
          $('#auditComplete').html('&nbsp;Audit incomplete&nbsp;');
          $('#auditComplete').css('backgroundColor','#E55');
     }
@@ -752,11 +698,11 @@ var manifest = null;
 </h1>
 
 <p>
-   This page implements some tools to conduct &quot;comparison&quot; risk-limiting audits as described in
+   This page implements some tools to conduct &quot;ballot-polling&quot; risk-limiting audits as described in
    <a href="http://statistics.berkeley.edu/~stark/Preprints/gentle12.pdf">A Gentle Introduction to
    Risk-Limiting Audits</a> (AGI), by Lindeman and Stark.
-   For an implementation of tools for &quot;ballot-polling&quot; risk-limiting audits as described in AGI, see
-   <a href="./ballotPollTools.htm">http://statistics.berkeley.edu/~stark/Vote/ballotPollTools.htm</a>.
+   For an implementation of tools for &quot;comparison&quot; risk-limiting audits as described in AGI, see
+   <a href="./ballotPollTools.htm">http://statistics.berkeley.edu/~stark/Vote/auditTools.htm</a>.
 </p>
 
 <p id="hideAll">
@@ -782,7 +728,7 @@ var manifest = null;
 
 
 <p>
-   The sample size calculations for this method depend on the risk limit and the
+   The expected sample size calculations for this method depend on the risk limit and the
    reported margins.
 </p>
 
@@ -802,8 +748,8 @@ var manifest = null;
    <li>Choose a number of ballots to audit initially, on the assumption that the contest outcome is correct.</li>
    <li>Select a random sample of ballots</li>
    <li>Find those ballots using a ballot manifest</li>
-   <li>Determine whether the audit can stop, given the votes on the ballots in the
-       sample. If the audit cannot stop yet, estimate how many additional ballots will need to be audited</li>
+   <li>Determine whether the audit can stop, given the votes on the ballots in the sample.
+       If the audit cannot stop yet, estimate how many additional ballots will need to be audited</li>
 </ul>
 
 
@@ -816,13 +762,13 @@ var manifest = null;
    the total ballots cast across all the contests combined, and the vote totals for each
    candidate in each contest.
    The form helps you anticipate the number of randomly selected
-   ballots that will need to be inspected to attain a given limit on the risk,
+   ballots that might need to be inspected to attain a given limit on the risk,
    under the assumption that the reported percentages for each candidate
    are correct.
    It is completely legitimate to sample one at a time and check whether enough have been
    sampled using the &quot;stopping sample size tool,&quot; (later in this page) but this
-   form can help auditors anticipate how much work will be required
-   and retrieve ballots more efficiently, by reducing the number of times a given batch of
+   form can help auditors anticipate how many ballots the audit is likely to require
+   and to retrieve ballots more efficiently, by reducing the number of times a given batch of
    ballots is opened.
 </p>
 
@@ -858,14 +804,13 @@ var manifest = null;
 				<fieldset>
 				   <legend>Audit parameters</legend>
 				       <label for="risk">Risk limit:</label>
-			           <input type="text" size="10" name="risk" id="risk" value="10%"
-			                  onblur="clearSampleSizes()"/>
+			           <input type="text" size="10" name="risk" id="risk" value="10%" />
                        <br />
                 </fieldset>
             </div>
             <div>
 			     <fieldset>
-				   <legend>Starting size</legend>
+				   <legend>Expected number of ballots to inspect</legend>
 				       <input type="button" name="startSize" id="startSize" value="Calculate size" />
 			       <span class="label" id="startSampleSize">&hellip;</span>
 			     </fieldset>
@@ -875,8 +820,8 @@ var manifest = null;
 </form>
 
 <p>
-   Taking a larger initial sample can avoid needing to expand the sample later, depending on the
-   rate of ballots for each candidate in the sample.
+   Taking a larger initial sample can avoid needing to expand the sample later,
+   depending on the rate of ballots for each candidate in the sample.
    Avoiding &quot;escalation&quot; can make the audit less complicated.
 </p>
 
@@ -918,8 +863,8 @@ var manifest = null;
 
 <p>
    The tool above can be used to explore whether it makes sense to audit a collection of contests
-   together by checking whether the required starting sample size when they are audited
-   together is greater than the sum of the required starting sample sizes when they are audited
+   together by checking whether the expected sample size when they are audited
+   together is greater than the sum of the expected sample sizes when they are audited
    separately.
    (If you experiment with different groupings of contests, be sure to change the entry for
    &quot;Ballots cast in all contests&quot; to reflect only the contests that are to be audited
@@ -968,16 +913,16 @@ var manifest = null;
 			     <br />
 			     <label for="samMany">Draw this many ballots:</label>
 			     <input type="text" size="10" name="samMany" id="samMany" value="1"/>
-			     <input type="button" name="nextItem" id="nextItem" onclick="nextSample();" value="draw sample" />
-			     <input type="button" name="reset" id="reset" onclick="resetMe();" value="reset" />
+			     <input type="button" name="nextItem" id="nextItem" value="draw sample" />
+			     <input type="button" name="reset" id="reset" value="reset" />
 			</div>
 			<br />
 			<div>
 			   <label for="list">Ballots selected:</label>
-			   <input type="checkbox" name="showSequence" id="showSequence" value="showSequence" checked onChange="writeList()" />
+			   <input type="checkbox" name="showSequence" id="showSequence" value="showSequence" checked />
 			   <label for="showSequence">show sequence numbers</label>
 
-			   <input type="checkbox" name="showHash" id="showHash" value="showHash" onChange="writeList()" />
+			   <input type="checkbox" name="showHash" id="showHash" value="showHash" />
 			   <label for="showHash">show hash values</label>
 			   <br />
 			   <textarea rows="10" cols="80" name="list" id="list" readonly="readonly"></textarea>
@@ -1226,9 +1171,7 @@ Provisional precinct 3, (995 999)
 			   <textarea rows="10" cols="80" name="ballotList" id="ballotList" ></textarea>
 			</div>
 			<div>
-			    <input type="button" id="lookUpBallot" name="lookUpBallot"
-			       onclick="lookUpBallots($('#ballotList').val().split(',').sort(numberLessThan), true);"
-			       value="look up ballots" />
+			    <input type="button" id="lookUpBallot" name="lookUpBallot" value="look up ballots" />
 		    </div>
 			<div>
 			   <label for="lookUp">Sorted lookup table:</label><br />
@@ -1243,147 +1186,8 @@ Provisional precinct 3, (995 999)
 <p>
    The stopping sample size tool determines whether enough ballots have been examined for the audit to stop,
    and if not, estimates how many more ballots will need to be audited.
-   The answer depends on the risk limit, the margin, and the differences between the cast vote
-   records and the manual inspection of the ballots in the sample.
-</p>
-
-<p>
-  Differences matter according to how they affect the <em>pairwise margin</em> between some winner and
-  some loser in some contest.
-  Suppose we are auditing a mayoral contest with four candidates, a city council contest that allows voting
-  for up to three of ten candidates, and
-  a simple measure that involves voting either &quot;yes&quot; or &quot;no.&quot;
-  The mayoral contest has three pairwise margins: The winner can be paired with each of
-  the three losers.
-  The city council contest has twenty-one pairwise margins: each of the three winners can be
-  paired with each of the seven losers.
-  The measure has but one pairwise margin, since it has only one winner and one loser.
-  In all, there are 3+21+1 = 25 pairwise margins among the three contests being audited.
-</p>
-
-<p>
-  If there is any difference between the cast vote record and the human interpretation of
-  a ballot, that ballot as a whole may have an understatement of one or two votes,
-  or an overstatement of one or two votes.
-  No matter how many contests on the ballot have differences and no matter how many
-  candidates in those
-  contests have differences, the ballot as a whole has
-  an understatement of one or two votes, or an overstatement of
-  one or two votes, or neither an understatement nor an overstatement.
-  (Of course, the sample might contain many ballots in each of these categories.)
-</p>
-
-<p>
-  If changing the interpretation of the ballot according to the voting system to make it match
-  the human interpretation of the ballot would widen <em>every</em> pairwise margin in
-  <em>every</em> contest
-  under audit, that ballot has
-  an <em>understatement</em>.
-  If it would widen <em>every</em> pairwise margin in <em>every</em> contest by two votes, the
-  ballot has a two-vote
-  understatement; otherwise it has a one-vote understatement.
-  If the ballot does not contain every contest under audit, it cannot have an understatement.
-  Since there is an understatement only if changing the machine interpretation of the ballot
-  to match the hand interpretation would increase <em>every</em> pairwise margin, understatements
-  are quite rare.
-  Understatements do not call the outcome into question, so they do not increase the
-  sample size required to confirm the outcome.
-</p>
-
-<p>
-  If changing the interpretation of the ballot according to the voting system to match
-  the human interpretation of the ballot would narrow <em>any</em>
-  pairwise margin in <em>any</em> contest
-  under audit, that ballot has an <em>overstatement</em>.
-  If changing the interpretation of the ballot according to the voting system to match
-  the human interpretation of the ballot would narrow <em>any</em> pairwise margin in
-  <em>any</em> contest under audit by two votes, that ballot
-  has a two-vote overstatement.
-  No matter how many margins would be narrowed by one or two votes, the overstatement on a
-  ballot is at most two votes, because only the maximum overstatement enters the calculations.
-  If enough ballots have overstatements, the outcome could be wrong, so overstatements
-  increase the sample size required to confirm the outcome.
-</p>
-
-<p>
-   As an example, suppose that we are auditing five contests simultaneously.
-   Tables&nbsp;1 and&nbsp;2 below show two hypothetical CVRs and manual interpretations of the
-   same ballots.
-</p>
-
-<div class="indent">
-<table rules="all">
-   <tr>
-       <th>&nbsp;</th><th align="center">contest 1</th><th align="center">contest 2</th>
-           <th align="center">contest 3</th><th align="center">contest 4</th><th align="center">contest 5</th>
-   </tr>
-   <tr>
-       <td>CVR</td>         <td>undervote</td> <td>winner</td>  <td>loser </td>              <td>not on ballot</td> <td>winner</td>
-   </tr>
-   <tr>
-       <td>Hand</td>        <td>loser</td>     <td>loser</td>   <td>winner</td>              <td>loser</td>         <td>not on ballot</td>
-   </tr>
-   <tr>
-       <td>discrepancy</td> <td>1 over</td>    <td>2 over</td>  <td>2 under<sup>**</sup></td> <td>1 over</td>       <td>1 over</td>
-   </tr>
-   <caption>
-        Table 1: Hypothetical CVR and hand interpretation
-        of a ballot that contains four of five contests under audit.
-        Overall, the ballot has an overstatement of 2 votes, because that is the largest overstatement of
-        any margin in any of the contests.
-   </caption>
-</table>
-   <p>
-        <sup>**</sup>Contest 3 has an understatement of 2 votes <em>only</em> if the contest has only two candidates.
-        If there are two or more losers in the contest (and only one winner), this contest has an understatement
-        of only one vote,
-        because only one pairwise margin was understated by two votes; the others were overstated by one vote.
-        Similarly, if there are two or more winners in the contest and only one loser, this contest has an understatement
-        of only one vote.
-        If there are at least two winners and at least two losers, there is no understatement in this contest, because
-        at least one pairwise margin was not affected at all by the discrepancy.
-        Regardless, the <em>ballot</em> has an overstatement of 2 votes, because the ballot has an overstatement of 2 votes
-        in contest 2.
-   </p>
-
-<table rules="all">
-   <tr>
-       <th>&nbsp;</th><th align="center">contest 1</th><th align="center">contest 2</th>
-           <th align="center">contest 3</th><th align="center">contest 4</th><th align="center">contest 5</th>
-   </tr>
-   <tr>
-       <td>CVR</td>         <td>winner</td>     <td>winner</td>      <td>undervote </td>   <td>not on ballot</td> <td>winner</td>
-   </tr>
-   <tr>
-       <td>Hand</td>        <td>overvote</td>   <td>undervote</td>   <td>loser</td>        <td>loser</td>         <td>not on ballot</td>
-   </tr>
-   <tr>
-       <td>discrepancy</td> <td>1 over</td>    <td>1 over</td>       <td>1 over</td>       <td>1 over</td>       <td>1 over</td>
-   </tr>
-   <caption>
-        Table 2: Hypothetical CVR and hand interpretation
-        of a ballot that contains four of five contests under audit.
-        Overall, the ballot has an overstatement of 1 vote, because that is the largest overstatement of
-        any margin in any of the contests.
-   </caption>
-</table>
-
-</div>
-
-<p>
-  To determine whether the audit can stop, enter the number of ballots in the sample
-  with overstatements or understatements of one or two votes, then
-  click &quot;Calculate.&quot;
-  If the sample size is not large enough to confirm the outcome based on the
-  number of differences of each type observed, the value of
-  &quot;If no more discrepancies are observed&quot; will be larger than
-  the current sample size, and the value of
-  &quot;Estimated additional ballots if difference rate stays the same&quot;
-  will be greater than zero.
-  That value is the estimated number of additional ballots that will need
-  to be audited to confirm the outcome at the desired risk limit,
-  assuming that the rate of one and two-vote understatements and overstatements
-  does not change as the sample expands.
+   The answer depends on the risk limit, the margin, and the number of votes for
+   each candidate found in a manual inspection of the the sample
 </p>
 
 
@@ -1396,26 +1200,8 @@ Provisional precinct 3, (995 999)
 
                       <span class="label" id="sizeSoFar">Ballots audited so far: 0</span>
                       <hr align="left"/>
-                      <label for="oneOver">1-vote overstatements:</label>
-			          <input type="text" size="10" name="oneOver" id="oneOver" value="0"
-			               onblur="clearStops();$('#obsRateOneOver').html('Rate: ' + doubleToStr(this.value/$('#samNum').val(),4));"/>
-			          <span class="label" id="obsRateOneOver">Rate: </span>
-			          <br />
-			          <label for="twoOver">2-vote overstatements:</label>
-			          <input type="text" size="10" name="twoOver" id="twoOver" value="0"
-			              onblur="clearStops();$('#obsRateTwoOver').html('Rate: ' + doubleToStr(this.value/$('#samNum').val(),4));"/>
-			          <span class="label" id="obsRateTwoOver">Rate: </span>
-			          <br />
-                      <label for="oneUnder">1-vote understatements:</label>
-			          <input type="text" size="10" name="oneUnder" id="oneUnder" value="0"
-			              onblur="clearStops();$('#obsRateOneUnder').html('Rate: ' + doubleToStr(this.value/$('#samNum').val(),4));"/>
-			          <span class="label" id="obsRateOneUnder">Rate: </span>
-			          <br />
-			          <label for="twoUnder">2-vote understatements:</label>
-			          <input type="text" size="10" name="twoUnder" id="twoUnder" value="0"
-			              onblur="clearStops();$('#obsRateTwoUnder').html('Rate: ' + doubleToStr(this.value/$('#samNum').val(),4));"/>
-			          <span class="label" id="obsRateTwoUnder">Rate: </span>
-			          <br />
+                      <label for="candidate1">:</label>
+
 			    </fieldset>
             </div>
             <div>
@@ -1424,13 +1210,8 @@ Provisional precinct 3, (995 999)
 			     <input type="button" name="stopping" id="stopping" onclick="findNmin();"
 			          value="Calculate" />
 			          <span class="label" id="auditComplete">&nbsp;Audit incomplete&nbsp;</span>
-			     <br />
-			     <span class="label" id="stopSampleSize"> If no more differences are observed: &hellip;</span>
-			     <br />
-			     <span class="label" id="estStopSampleSize"> If differences continue at the same rate:  &hellip; . </span>
-			     <br />
-			     <span class="label" id="additionalBallots"> Estimated additional ballots if difference
-			                                                 rate stays the same: &hellip; </span>
+			     </fieldset>
+
 			</div>
 		</fieldset>
 
@@ -1452,33 +1233,13 @@ Provisional precinct 3, (995 999)
    <a href="http://statistics.berkeley.edu/~stark/Preprints/nongeek11.pdf">AGI</a>:
 </p>
 
-<p class="center endingSampleNotes notes">
-  stopping sample size =   <em>-2g(log(a) + o<sub>1</sub>log(1-1/(2g)) +
-              o<sub>2</sub>log(1 - 1/g) + u<sub>1</sub>log(1+1/(2g)) + u<sub>2</sub>log(1+1/g)) / m)</em>
-</p>
-<p class="endingSampleNotes notes">
-   with <em>m</em> equal to the diluted margin, <em>a</em> equal to the risk limit,
-   <em>o<sub>1</sub></em> the number of 1-vote overstatements in the sample,
-   <em>o<sub>2</sub></em> the number of 2-vote overstatements in the sample,
-   <em>u<sub>1</sub></em> the number of 1-vote understatements in the sample, and
-   <em>u<sub>2</sub></em> the number of 2-vote understatements in the sample.
-   In the tool below,  <em>g</em> = 1.03905, but any value greater than one can be used.
-   For <em>g</em> = 1.03905, a two-vote overstatement increases the sample
-   size by five times as much as a one-vote overstatement.
-</p>
 
-<p class="endingSampleNotes notes">
-   The estimates based on differences continuing to occur at the observed rate are
-   based on the method described above for estimating the initial sample size,
-   including the method of rounding the expected number of differences of each
-   type.
-</p>
 
 
 <p>
 <small>P.B. Stark, <a href="statistics.berkeley.edu/~stark">statistics.berkeley.edu/~stark</a>.
-http://statistics.berkeley.edu/~stark/Java/Html/auditTools.htm
-Last modified 23 July 2012.</small>
+http://statistics.berkeley.edu/~stark/Java/Html/ballotTools.htm
+Last modified 12 August 2014.</small>
 </p>
 
 </body>
