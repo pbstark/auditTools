@@ -373,13 +373,28 @@
             minMargin = 'undefined';
             asn = 'undefined';
             $("#theDilutedMargin").text('Diluted margin: undefined.');
-            $("#theMargin").text('Smallest margin (votes): undefined. ');
-            $("#asn").text('Expected sample size: undefined.  ');
+            $("#theMargin").text('Smallest margin (votes): undefined.');
+            $("#asn").text('Expected sample size: undefined.');
         } else {
             $("#theMargin").text('Smallest margin (votes): ' + commify(minMargin) + '. ');
             $("#theDilutedMargin").text(' Diluted margin: ' + commify(doubleToStr(100*minMargin/ballots,2)) + '%. ');
             $("#asn").text('Expected sample size: ' + commify(asn) + '. ');
             buildTestMatrix();
+        }
+        if (!(opsOk & votesOk & ballOk)) {
+            try {
+                for (var i=0; i < candidates.length; i++) {
+                    var vf = parseInt($("#voteForContest" + i.toString()).val());
+                    if (candidates[i].length <  vf ) {
+                        throw 'Fewer candidates than voting opportunities in contest ' + (i+1).toString() + '!';
+                    }
+                    if (vSum(candidates[i]) > vf*ballots) {
+                        throw 'More votes than voting opportunities in contest ' + (i+1).toString() + '!';
+                    }
+                }
+            } catch(e) {
+                alert(e);
+            }
         }
         return(opsOk & votesOk & ballOk);
     }
@@ -416,34 +431,10 @@
 
     function clearSampleSizes() {
         $('#startSampleSize').html('&hellip;');
-        return(true);
-    }
-
-    function findNmin() {
-        var n = Number.NaN;
-        var nf = Number.NaN;
-        if (!findMinMargin()) {
-           try {
-               for (var i=0; i < candidates.length; i++) {
-                   var vf = parseInt($("#voteForContest" + i.toString()).val());
-                   if (candidates[i].length <  vf ) {
-                       throw 'Fewer candidates than voting opportunities in contest ' + (i+1).toString() + '!';
-                   }
-                   if (vSum(candidates[i]) > vf*ballots) {
-                       throw 'More votes than voting opportunities in contest ' + (i+1).toString() + '!';
-                   }
-               }
-           } catch(e) {
-               alert(e);
-           }
-        } else if (parseInt(minMargin) > 0) {
-            try {
-              var m = minMargin/parseInt($("#nBallots").val());
-              risk = parsePercent($("#risk").val());
-            } catch(e) {
-               alert(e);
-            }
+        if (findMinMargin()) {
+            buildTestMatrix();
         }
+        return(true);
     }
 
     function lookUpBallots(whichBallots, sort) {
