@@ -324,14 +324,14 @@
         */
         try {
             risk = parsePercent($("#risk").val());
-alert('risk, ballots, vw, vl' + risk + ' ' + ballots + ' ' + vw + ' ' + vl)
+alert('risk, ballots, vw, vl ' + risk + ' ' + ballots + ' ' + vw + ' ' + vl)
             if (vw > vl) {
                 sw = vw/(vw+vl);
                 zw = Math.log(0.5*sw);
                 zl = Math.log(0.5*(1-sw));
                 pw = vw/ballots;
                 pl = vl/ballots;
-                asn = Math.ceil((Math.log(1.0/risk) + zw/2)/((1.0 - (vi + vv - vw - vl)/(totv))*(pw*zw + pl*zl)));
+                asn = Math.ceil((Math.log(1.0/risk) + zw/2)/(((vw + vl)/ballots)*(pw*zw + pl*zl)));
             } else {
                 asn = 'undefined';
                 alert('Error: Loser reported to have more votes than winner! (' + vw + ' < ' + vl + ')');
