@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml"
-	  xmlns:pref="http://www.w3.org/2002/Math/preference"
+      xmlns:pref="http://www.w3.org/2002/Math/preference"
       pref:renderer="css">
 
 <head>
@@ -12,8 +12,8 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-	pageModDate = "12 August 2014 12:53:59 PDT";
-	// copyright 2011&ndash;2014 by P.B. Stark, statistics.berkeley.edu/~stark, Hriday, Rachel.
+    pageModDate = "13 August 2014 12:53:59 PDT";
+    // copyright 2011&ndash;2014 by P.B. Stark, statistics.berkeley.edu/~stark, Hriday, Rachel.
     // All rights reserved.
 // -->
 </script>
@@ -73,7 +73,6 @@
       $("#addContestButton").click(function(){addContest();});
       $("#removeContestButton").click(function(){removeContest();});
       $("input[type=text]").focus(function(){this.select();});
-      $("#startSize").click(function(){sampleSizeEst();findNmin();});
       $("#byMargin").change(function(){plotSample();});
       $("#risk").change(function(){updateVotes();});
       $("#nextItem").click(function(){nextSample();});
@@ -91,103 +90,165 @@
         var winners = [];
         var losers = [];
         var names = [];
+        var waldFactor = [];
         var ballots;
+        var risk;
 
-		function addContest() {  // adds a contest
-		    candidates.push([]);
-		    names.push([]);
-		    winners.push([]);
-		    losers.push([]);
-		    var conStr = (candidates.length-1).toString();
-		    var str = '<hr align="left" id="hrCon' + conStr + '"><div class="contest" id="contest' + conStr + '" contest="' + conStr + '">' +
-		              '<span class="label">Contest ' + candidates.length.toString() +
-		              '.&nbsp;&nbsp;</span>' +
-		              '<label for="contestName' + conStr + '">Contest name: </label>' +
-		              '<input type="text" size="80" id="contestName' + conStr + '" class="contestName" /><br />' +
-		              '<label for="voteForContest' + conStr +  '">Winners:&nbsp;</label>' +
-		              '<select id="voteForContest' + conStr + '">' +
-		                 '<option value="1">1</option>' +
-		                 '<option value="2">2</option>' +
-		                 '<option value="3">3</option>' +
-		                 '<option value="4">4</option>' +
-		                 '<option value="5">5</option>' +
-		                 '<option value="6">6</option>' +
-		                 '<option value="7">7</option>' +
-		                 '<option value="8">8</option>' +
-		                 '<option value="9">9</option>' +
-		                 '<option value="10">10</option>' +
-		              '</select><p><span class="label">Reported votes:</span></p></div><br />' +
-		              '<div class="addCandidate" id="addCandidate' + conStr + '" contest="' + conStr + '">' +
-		              '<input type="button" id="addCandidateButton' + conStr +
-		              '" value="Add candidate to contest ' + candidates.length.toString() +
-		              '" contest="' + conStr + '"/>' +
-		              '<input type="button" id="removeCandidateButton' + conStr +
-		              '" value="Remove last candidate from contest ' + candidates.length.toString() +
-		              '" contest="' + conStr + '"/></div>';
-		    $(".contestList").append(str);
-		    $("#contest" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
+        function addContest() {  // adds a contest
+            candidates.push([]);
+            names.push([]);
+            winners.push([]);
+            losers.push([]);
+            var conStr = (candidates.length-1).toString();
+            var str = '<hr align="left" id="hrCon' + conStr + '"><div class="contest" id="contest' + conStr + '" contest="' + conStr + '">' +
+                      '<span class="label">Contest ' + candidates.length.toString() +
+                      '.&nbsp;&nbsp;</span>' +
+                      '<label for="contestName' + conStr + '">Contest name: </label>' +
+                      '<input type="text" size="80" id="contestName' + conStr + '" class="contestName" /><br />' +
+                      '<label for="voteForContest' + conStr +  '">Winners:&nbsp;</label>' +
+                      '<select id="voteForContest' + conStr + '">' +
+                         '<option value="1">1</option>' +
+                         '<option value="2">2</option>' +
+                         '<option value="3">3</option>' +
+                         '<option value="4">4</option>' +
+                         '<option value="5">5</option>' +
+                         '<option value="6">6</option>' +
+                         '<option value="7">7</option>' +
+                         '<option value="8">8</option>' +
+                         '<option value="9">9</option>' +
+                         '<option value="10">10</option>' +
+                      '</select><p><span class="label">Reported votes:</span></p></div><br />' +
+                      '<div class="addCandidate" id="addCandidate' + conStr + '" contest="' + conStr + '">' +
+                      '<input type="button" id="addCandidateButton' + conStr +
+                      '" value="Add candidate to contest ' + candidates.length.toString() +
+                      '" contest="' + conStr + '"/>' +
+                      '<input type="button" id="removeCandidateButton' + conStr +
+                      '" value="Remove last candidate from contest ' + candidates.length.toString() +
+                      '" contest="' + conStr + '"/></div>';
+            $(".contestList").append(str);
             $("#contest" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
-		    var conRef = "#contest" + conStr;
-		    var candRefLast = '.candidate.contest' + candidates.length + ':last';
-		    var thisContest = candidates.length-1;
-		    $("#contestName" + conStr).blur(function(){names[conStr][0] = this.value;});
-		    $("#addCandidateButton" + conStr).click(function(){$(conRef).append(addCandidate(conStr));updateVotes();});
-		    $("#removeCandidateButton" + conStr).click(function(){$(candRefLast).remove();
-		                                                          candidates[thisContest].pop();
-		                                                          names[thisContest].pop();
-		                                                          updateVotes();}
-		                                              );
-		    return(true);
-		}
+            $("#contest" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
+            var conRef = "#contest" + conStr;
+            var candRefLast = '.candidate.contest' + candidates.length + ':last';
+            var thisContest = candidates.length-1;
+            $("#contestName" + conStr).blur(function(){names[conStr][0] = this.value;});
+            $("#addCandidateButton" + conStr).click(function(){$(conRef).append(addCandidate(conStr));updateVotes();});
+            $("#removeCandidateButton" + conStr).click(function(){$(candRefLast).remove();
+                                                                  candidates[thisContest].pop();
+                                                                  names[thisContest].pop();
+                                                                  updateVotes();}
+                                                      );
+            return(true);
+        }
 
-		function removeContest() {  // removes most recently added contest
-		    var conStr = (candidates.length-1).toString();
-		    $("#hrCon" + conStr).remove();
-		    $("#contest" + conStr).remove();
-		    $("#addCandidateButton" + conStr).remove();
-		    $("#removeCandidateButton" + conStr).remove();
-		    candidates.pop();
-		    names.pop();
-		    return(true);
-		}
+        function removeContest() {  // removes most recently added contest
+            var conStr = (candidates.length-1).toString();
+            $("#hrCon" + conStr).remove();
+            $("#contest" + conStr).remove();
+            $("#addCandidateButton" + conStr).remove();
+            $("#removeCandidateButton" + conStr).remove();
+            candidates.pop();
+            names.pop();
+            return(true);
+        }
 
-
-		function addCandidate(contest) {  // adds a candidate to the most recently added contest
+        function addCandidate(contest) {  // adds a candidate to the most recently added contest
             candidates[contest].push(0);
-		    var theCandidate = (parseInt(contest)+1).toString() + '_' + candidates[contest].length.toString();
-		    return('<div class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
-		           'id="candidate_' +  theCandidate + '">' +
-		           '<label for="name' + theCandidate + '">Candidate ' + candidates[contest].length +  ' Name: </label> ' +
-		           '<input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
-		              (candidates[contest].length-1) + ']=this.value;" />' +
-		           '<label for="nBallots' + theCandidate + '">&nbsp;&nbsp;Votes: ' + '</label>' +
-		           '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>');
-		}
+            var theCandidate = (parseInt(contest)+1).toString() + '_' + candidates[contest].length.toString();
+            return('<div class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
+                   'id="candidate_' +  theCandidate + '">' +
+                   '<label for="name' + theCandidate + '">Candidate ' + candidates[contest].length +  ' Name: </label> ' +
+                   '<input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
+                      (candidates[contest].length-1) + ']=this.value;" />' +
+                   '<label for="nBallots' + theCandidate + '">&nbsp;&nbsp;Votes: ' + '</label>' +
+                   '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>');
+        }
+
+        function buildTestMatrix() {
+            /*   Builds the matrix of test statistics and populates the Wald factor matrix.
+                Assumes that winners[] and losers[] have been populated.
+            */
+            var str = '<div class="testStatistic" id="testStatistic" >' +
+                      '<table id="testMatrix"><tbody></tbody></table></div>';
+            $(".testTable").empty();
+            $(".testTable").append(str);
+            str = '';
+            for (var i=0; i < candidates.length; i++) {
+                str += '<tr><td></td>';
+                for (var W=0; W < winners[i].length; W++) {
+                    str += '<th id="Twinner_' + i + '_' + winners[i][W] + '">' +
+                            names[i][winners[i][W]] +
+                            '&nbsp;<input type="text" size="8" id="votes_for_"' + i + '_' + winners[i][W] +
+                            '"  onblur="updateTestStatistic(' + i + ');" value="0"/></th>';
+                }
+                str += '</tr>';
+                for (var L=0; L < losers[i].length; L++) {
+                    str += '<tr id="Tloser_'  + i + '_' + losers[i][L] + '"><th>' + names[i][losers[i][L]] +
+                           '&nbsp;<input type="text" size="8" id="votes_for_"' + i + '_' + losers[i][L] +
+                            '"  onblur="updateTestStatistic(' + i + ');" value="0"/></th>';
+                    for (var W=0; W < winners[i].length; W++) {
+                        str += '<td id="T_' + [i, losers[i][L], winners[i][W]].join(',') + '">1</td>';
+                    }
+                    str += '</tr>';
+                }
+            }
+            $("#testStatistic tbody").append(str);
+            // populate the Wald factor matrix
+            waldFactor = [];
+            for (var i=0; i < candidates.length; i++) {
+                waldFactor.push({});
+                for (var W=0; W < winners[i].length; W++) {
+                    for (var L=0; L < losers[i].length; L++) {
+                        hashString = winners[i][W] + ',' + losers[i][L];
+                        waldFactor[i][hashString] = candidates[i][winners[i][W]] /
+                                         (candidates[i][winners[i][W]] + candidates[i][losers[i][L]]);
+                    }
+                }
+            }
+            return(true);
+        }
+
+        function updateTestStatistic(i) { // updates the test statistic for contest i
+            risk = parsePercent($("#risk").val());
+            for (var W=0; W < winners[i].length; W++) {
+                vW = parseInt($("#votes_for_" + i + '_' + winners[i][W]).val());
+                for (var L=0; L < losers[i].length; L++) {
+                    vL = parseInt($("#votes_for_" + i + '_' + losers[i][L]).val());
+                    hashString = winners[i][W] + ',' + losers[i][L];
+                    ts = Math.pow(2*waldFactor[i][hashString], vW) *
+                         Math.pow(2*(1-waldFactor[i][hashString], vL));
+                    $("#T_" + [i, losers[i][L], winners[i][W]].join(',')).text(roundToDig(ts, 2));
+                    if (ts > 1/risk) {
+                        $("#T_" + [i, losers[i][L], winners[i][W]].join(',')).css('backgroundColor', '#E55');
+                    } else {
+                        $("#T_" + [i, losers[i][L], winners[i][W]].join(',')).css('backgroundColor', '');
+                    }
+                }
+            }
+        }
 
 
-		var hasher;
-		var sample = new Array(3);
-		sample[0] = new Array();
-		sample[1] = new Array();
-		sample[2] = new Array();
-		var winner = new Array();
-		var loser = new Array();
+        var hasher;
+        var sample = new Array(3);
+        sample[0] = new Array();
+        sample[1] = new Array();
+        sample[2] = new Array();
 
-		function hashMe() {  // hashes the next sequence number
-			hasher = new jsSHA($("#seedValue").val() + "," +
-			                   $("#samNum").val(), "ASCII");
-			$("#nObj").val(parseInt($("#nObj").val()));
-			if ($("#nObj").val() == 'NaN') {
-			    $("#nObj").val(1);
-			}
-			try {
-			    sample[0].push($("#samNum").val());
-				sample[1].push(hasher.getHash("SHA-256", "HEX"));
-				sample[2].push(1 +
-			                     modInt( str2bigInt(hasher.getHash("SHA-256", "HEX"), 16, 0),
-			                              parseInt($("#nObj").val())
-			                           )
-			                   );
+        function hashMe() {  // hashes the next sequence number
+            hasher = new jsSHA($("#seedValue").val() + "," +
+                               $("#samNum").val(), "ASCII");
+            $("#nObj").val(parseInt($("#nObj").val()));
+            if ($("#nObj").val() == 'NaN') {
+                $("#nObj").val(1);
+            }
+            try {
+                sample[0].push($("#samNum").val());
+                sample[1].push(hasher.getHash("SHA-256", "HEX"));
+                sample[2].push(1 +
+                                 modInt( str2bigInt(hasher.getHash("SHA-256", "HEX"), 16, 0),
+                                          parseInt($("#nObj").val())
+                                       )
+                               );
                 writeList();
                 $("#sortedList").val(sample[2].slice().sort(numberLessThan).join(','));
                 $("#ballotList").val($("#sortedList").val());
@@ -197,8 +258,8 @@
                      $("#duplicates").val('Ballot, multiplicity\n' + arrayToString(findRepeats(deDupeList)));
                 }
             } catch(e) {
-			}
-		}
+            }
+        }
 
         function writeList() {  // writes the list of ballots selected
             if ($("#showSequence").prop('checked') &
@@ -215,35 +276,38 @@
         }
 
 
-		function startMe() {   // initialize
-		    clearList();
-		    hashMe();
-		}
-
-		function clearList() {  // clear the lists
-		    sample = new Array(3);
-		    sample[0] = new Array();
-		    sample[1] = new Array();
-		    sample[2] = new Array();
-		    $("#list").val('');
-		    $("#sortedList").val('');
-		    $("#sortedDedupeList").val('');
-		    $("#ballotList").val('');
-		    $("#duplicates").val('');
-		}
-
-		function resetMe() {  // reset
-		    clearList();
-		    $("#samNum").val('0');
+        function startMe() {   // initialize
+            clearList();
+            hashMe();
         }
 
-		function nextSample() {  // draws the next sample, of #samMany ballots
-		    for (var i=0; i < parseInt($("#samMany").val()); i++) {
-		        $("#samNum").val(parseInt($("#samNum").val()) + 1);
-		        hashMe();
-		        $("#sizeSoFar").text('Ballots audited so far: ' + sample[0].length.toString());
-		    }
-		}
+        function clearList() {  // clear the lists
+            sample = new Array(3);
+            sample[0] = new Array();
+            sample[1] = new Array();
+            sample[2] = new Array();
+            $("#list").val('');
+            $("#sortedList").val('');
+            $("#sortedDedupeList").val('');
+            $("#ballotList").val('');
+            $("#duplicates").val('');
+            if(findMinMargin()) {
+                buildTestMatrix();
+            }
+        }
+
+        function resetMe() {  // reset
+            clearList();
+            $("#samNum").val('0');
+        }
+
+        function nextSample() {  // draws the next sample, of #samMany ballots
+            for (var i=0; i < parseInt($("#samMany").val()); i++) {
+                $("#samNum").val(parseInt($("#samNum").val()) + 1);
+                hashMe();
+                $("#sizeSoFar").text('Ballots audited so far: ' + sample[0].length.toString());
+            }
+        }
 
     var minMargin;
     var testStatistics;
@@ -286,7 +350,10 @@
                         losers[i].push(j);
                     }
                 }
-                if (parsePercent($("#risk").val())) { // risk limit has been set; we can calculate sample size
+                if (parsePercent($("#risk").val())) {
+                    /* risk limit has been set; we can calculate sample size if all margins are
+                      defined.
+                    */
                     for (var j=0; j < winners[i].length; j++) {
                         for (var k=0; k < losers[i].length; k++) {
                             asn = Math.max(asn, findAsn(ballots,
@@ -312,29 +379,28 @@
             $("#theMargin").text('Smallest margin (votes): ' + commify(minMargin) + '. ');
             $("#theDilutedMargin").text(' Diluted margin: ' + commify(doubleToStr(100*minMargin/ballots,2)) + '%. ');
             $("#asn").text('Expected sample size: ' + commify(asn) + '. ');
+            buildTestMatrix();
         }
         return(opsOk & votesOk & ballOk);
     }
 
     function findAsn(ballots, vw, vl) {  // returns Wald's "average sample number" (ASN)
-        /* risk = risk limit
-           ballots = total ballots in the contest
+        /* ballots = total ballots in the contest
            vw = ballots cast for the winner of the pair
            vl = ballots cast for the lower of the pair
         */
         try {
             risk = parsePercent($("#risk").val());
-alert('risk, ballots, vw, vl ' + risk + ' ' + ballots + ' ' + vw + ' ' + vl)
             if (vw > vl) {
                 sw = vw/(vw+vl);
-                zw = Math.log(0.5*sw);
-                zl = Math.log(0.5*(1-sw));
+                zw = Math.log(2.0*sw);
+                zl = Math.log(2.0*(1-sw));
                 pw = vw/ballots;
                 pl = vl/ballots;
-                asn = Math.ceil((Math.log(1.0/risk) + zw/2)/(((vw + vl)/ballots)*(pw*zw + pl*zl)));
+                asn = Math.ceil(
+                     (Math.log(1.0/risk) + zw/2.0)/(((vw + vl)/ballots)*(pw*zw + pl*zl)));
             } else {
                 asn = 'undefined';
-                alert('Error: Loser reported to have more votes than winner! (' + vw + ' < ' + vl + ')');
             }
         } catch(e) {
             asn = 'undefined';
@@ -350,46 +416,7 @@ alert('risk, ballots, vw, vl ' + risk + ' ' + ballots + ' ' + vw + ' ' + vl)
 
     function clearSampleSizes() {
         $('#startSampleSize').html('&hellip;');
-        $('#auditComplete').html('&nbsp;Audit incomplete&nbsp;');
-        $('#auditComplete').css('backgroundColor','#E55');
         return(true);
-    }
-
-    function sampleSizeEst() {
-        var n = Number.NaN;
-        if (!findMinMargin()) {
-           try {
-               for (var i=0; i < candidates.length; i++) {
-                   var vf = parseInt($("#voteForContest" + i.toString()).val());
-                   if (candidates[i].length <  vf ) {
-                       throw 'Fewer candidates than voting opportunities in contest ' + (i+1).toString() + '!';
-                   }
-                   if (vSum(candidates[i]) > vf*ballots) {
-                       throw 'More votes than voting opportunities in contest ' + (i+1).toString() + '!';
-                   }
-                   if (isNaN(parseInt($("#nBallots").val()))) {
-                       throw 'Total number of ballots must be specified!';
-                   }
-               }
-           } catch(e) {
-               $("#startSampleSize").html('&hellip;');
-               alert(e);
-           }
-        } else if (parseInt(minMargin) > 0) {
-            try {
-              var m = minMargin/parseInt($("#nBallots").val());
-              var risk = parsePercent($("#risk").val());
-              n = 0;
-              // FIX ME! TODO
-              $("#startSampleSize").text(' ' + n.toString() + '.');
-              $("#samMany").val(n.toString());
-            } catch(e) {
-               alert(e);
-            }
-        } else {
-              $("#startSampleSize").html('&hellip;');
-              $("#samMany").val(0);
-        }
     }
 
     function findNmin() {
@@ -407,27 +434,17 @@ alert('risk, ballots, vw, vl ' + risk + ' ' + ballots + ' ' + vw + ' ' + vl)
                    }
                }
            } catch(e) {
-               clearStops();
                alert(e);
            }
         } else if (parseInt(minMargin) > 0) {
             try {
               var m = minMargin/parseInt($("#nBallots").val());
-              var risk = parsePercent($("#risk").val());
-              // n = asn(risk, ); FIX ME!
+              risk = parsePercent($("#risk").val());
             } catch(e) {
                alert(e);
             }
-        } else {
-              clearStops();
         }
     }
-
-    function clearStops() {
-         $('#auditComplete').html('&nbsp;Audit incomplete&nbsp;');
-         $('#auditComplete').css('backgroundColor','#E55');
-    }
-
 
     function lookUpBallots(whichBallots, sort) {
         for (var i=0; i < whichBallots.length; i++) {
@@ -718,7 +735,7 @@ var manifest = null;
 <div id="bodyDiv">
 
 <h1>
-   Tools for Comparison Risk-Limiting Election Audits
+   Tools for Ballot-Polling Risk-Limiting Election Audits
 </h1>
 
 <p>
@@ -807,33 +824,32 @@ var manifest = null;
 
 
 <form action="#" method="get">
-		<fieldset>
-			<legend>Initial sample size</legend>
-			<div>
-				<fieldset>
-				   <legend>Contest information</legend>
-				       <label for="nBallots">Ballots cast in all contests:</label>
+        <fieldset>
+            <legend>Initial sample size</legend>
+            <div>
+                <fieldset>
+                   <legend>Contest information</legend>
+                       <label for="nBallots">Ballots cast in all contests:</label>
                        <input type="text" size="10" name="nBallots" id="nBallots"
-			                  onblur="$('#nObj').val(this.value);updateVotes();"/>&nbsp;&nbsp;
-			           <span class="label" id="theMargin">Smallest margin (votes): undefined. </span>
-			           <span class="label" id="theDilutedMargin">Diluted margin: undefined.</span>
+                              onblur="$('#nObj').val(this.value);updateVotes();"/>&nbsp;&nbsp;
+                       <span class="label" id="theMargin">Smallest margin (votes): undefined. </span>
+                       <span class="label" id="theDilutedMargin">Diluted margin: undefined.</span>
 
-			    	   <div class="contestList"></div>
-			           <div class="addRemoveContest" id="addContest">
-			                <hr align="left">
-			                <input type="button" id="addContestButton" value="Add contest"/>
-			                <input type="button" id="removeContestButton" value="Remove last contest"/>
-			           </div>
-			    </fieldset>
-				<fieldset>
-				   <legend>Audit parameters</legend>
-				       <label for="risk">Risk limit:</label>
-			           <input type="text" size="10" name="risk" id="risk" value="10%" />
+                       <div class="contestList"></div>
+                       <div class="addRemoveContest" id="addContest">
+                            <hr align="left">
+                            <input type="button" id="addContestButton" value="Add contest"/>
+                            <input type="button" id="removeContestButton" value="Remove last contest"/>
+                       </div>
+                </fieldset>
+                <fieldset>
+                   <legend>Audit parameters</legend>
+                       <label for="risk">Risk limit:</label>
+                       <input type="text" size="10" name="risk" id="risk" value="10%" />
                        <span class="label" id="asn">Expected sample size: undefined.</span>
-			     </fieldset>
-			</div>
-		</fieldset>
-
+                 </fieldset>
+            </div>
+        </fieldset>
 </form>
 
 <p>
@@ -896,11 +912,6 @@ var manifest = null;
    <a href="http://statistics.berkeley.edu/~stark/Preprints/nongeek11.pdf">AGI</a>:
 </p>
 
-<p class="center startingSampleNotes notes">
-    FIX ME!
-</p>
-
-
 <h2>Random sampling</h2>
 
 <p>
@@ -912,51 +923,51 @@ var manifest = null;
    ballots among the batches in which ballots are stored.
 </p>
 
-	<form action="#" method="get">
-		<fieldset>
-			<legend>Pseudo-Random Sample of Ballots</legend>
-			<div>
-				<label for="seedValue">Seed:</label>
-				<input type="text" size="25" name="seedValue" id="seedValue" onblur="clearList();"
-				       value="Input seed here" />
-			</div>
-			<div>
-			    <label for="nObj">Number of ballots:</label>
-			    <input type="text" size="10" name="nObj" id="nObj" onblur="clearList();" value="1000"/>
+    <form action="#" method="get">
+        <fieldset>
+            <legend>Pseudo-Random Sample of Ballots</legend>
+            <div>
+                <label for="seedValue">Seed:</label>
+                <input type="text" size="25" name="seedValue" id="seedValue" onblur="clearList();"
+                       value="Input seed here" />
             </div>
-			<div>
+            <div>
+                <label for="nObj">Number of ballots:</label>
+                <input type="text" size="10" name="nObj" id="nObj" onblur="clearList();" value="1000"/>
+            </div>
+            <div>
                  <label for="samNum">Current sample number:</label>
-			     <input type="text" size="10" name="samNum" id="samNum" editable="false" value="1"/>
-			     <br />
-			     <label for="samMany">Draw this many ballots:</label>
-			     <input type="text" size="10" name="samMany" id="samMany" value="1"/>
-			     <input type="button" name="nextItem" id="nextItem" value="draw sample" />
-			     <input type="button" name="reset" id="reset" value="reset" />
-			</div>
-			<br />
-			<div>
-			   <label for="list">Ballots selected:</label>
-			   <input type="checkbox" name="showSequence" id="showSequence" value="showSequence" checked />
-			   <label for="showSequence">show sequence numbers</label>
+                 <input type="text" size="10" name="samNum" id="samNum" editable="false" value="1"/>
+                 <br />
+                 <label for="samMany">Draw this many ballots:</label>
+                 <input type="text" size="10" name="samMany" id="samMany" value="1"/>
+                 <input type="button" name="nextItem" id="nextItem" value="draw sample" />
+                 <input type="button" name="reset" id="reset" value="reset" />
+            </div>
+            <br />
+            <div>
+               <label for="list">Ballots selected:</label>
+               <input type="checkbox" name="showSequence" id="showSequence" value="showSequence" checked />
+               <label for="showSequence">show sequence numbers</label>
 
-			   <input type="checkbox" name="showHash" id="showHash" value="showHash" />
-			   <label for="showHash">show hash values</label>
-			   <br />
-			   <textarea rows="10" cols="80" name="list" id="list" readonly="readonly"></textarea>
-			</div>
-			<div>
-			   <label for="sortedList">Ballots selected, sorted:</label><br />
-			   <textarea rows="10" cols="80" name="sortedList" id="sortedList" readonly="readonly"></textarea>
-			</div>
-			<div>
-			   <label for="sortedDedupeList">Ballots selected, sorted, duplicates removed:</label><br />
-			   <textarea rows="10" cols="80" name="sortedDedupeList" id="sortedDedupeList" readonly="readonly"></textarea>
-			</div>
-			<div>
-			   <label for="duplicates">Repeated ballots:</label><br />
-			   <textarea rows="10" cols="80" name="duplicates" id="duplicates" readonly="readonly"></textarea>
-			</div>
-		</fieldset>
+               <input type="checkbox" name="showHash" id="showHash" value="showHash" />
+               <label for="showHash">show hash values</label>
+               <br />
+               <textarea rows="10" cols="80" name="list" id="list" readonly="readonly"></textarea>
+            </div>
+            <div>
+               <label for="sortedList">Ballots selected, sorted:</label><br />
+               <textarea rows="10" cols="80" name="sortedList" id="sortedList" readonly="readonly"></textarea>
+            </div>
+            <div>
+               <label for="sortedDedupeList">Ballots selected, sorted, duplicates removed:</label><br />
+               <textarea rows="10" cols="80" name="sortedDedupeList" id="sortedDedupeList" readonly="readonly"></textarea>
+            </div>
+            <div>
+               <label for="duplicates">Repeated ballots:</label><br />
+               <textarea rows="10" cols="80" name="duplicates" id="duplicates" readonly="readonly"></textarea>
+            </div>
+        </fieldset>
 
 </form>
 
@@ -1171,30 +1182,30 @@ Provisional precinct 3, (995 999)
    audited together using the sample (686 in this example).
 </p>
 
-	<form action="#" method="get">
-		<fieldset>
-			<legend>Ballot look-up tool</legend>
-			<div>
-			    <label for="manifest">Ballot manifest: Each line must have a batch label, a comma, and one of the following:<br />
-			                          &nbsp;&nbsp;(i) the number of ballots in the batch <br />
-			                          &nbsp;&nbsp;(ii) a range specified with a colon (e.g., 131:302), or <br />
-			                          &nbsp;&nbsp;(iii) a list of ballot identifiers within parentheses, separated by spaces (e.g., (996 998 1000)).<br />
-			                          Each line should have exactly one comma.<br />
-			                          </label><br />
-				<textarea rows="25" cols="80" name="manifest" id="manifest"></textarea>
-			</div>
-			<div>
-			   <label for="ballotList">Ballots to look up (separated by commas):</label><br />
-			   <textarea rows="10" cols="80" name="ballotList" id="ballotList" ></textarea>
-			</div>
-			<div>
-			    <input type="button" id="lookUpBallot" name="lookUpBallot" value="look up ballots" />
-		    </div>
-			<div>
-			   <label for="lookUp">Sorted lookup table:</label><br />
-			   <textarea rows="25" cols="80" name="lookUp" id="lookUp" readonly="readonly"></textarea>
-			</div>
-		</fieldset>
+    <form action="#" method="get">
+        <fieldset>
+            <legend>Ballot look-up tool</legend>
+            <div>
+                <label for="manifest">Ballot manifest: Each line must have a batch label, a comma, and one of the following:<br />
+                                      &nbsp;&nbsp;(i) the number of ballots in the batch <br />
+                                      &nbsp;&nbsp;(ii) a range specified with a colon (e.g., 131:302), or <br />
+                                      &nbsp;&nbsp;(iii) a list of ballot identifiers within parentheses, separated by spaces (e.g., (996 998 1000)).<br />
+                                      Each line should have exactly one comma.<br />
+                                      </label><br />
+                <textarea rows="25" cols="80" name="manifest" id="manifest"></textarea>
+            </div>
+            <div>
+               <label for="ballotList">Ballots to look up (separated by commas):</label><br />
+               <textarea rows="10" cols="80" name="ballotList" id="ballotList" ></textarea>
+            </div>
+            <div>
+                <input type="button" id="lookUpBallot" name="lookUpBallot" value="look up ballots" />
+            </div>
+            <div>
+               <label for="lookUp">Sorted lookup table:</label><br />
+               <textarea rows="25" cols="80" name="lookUp" id="lookUp" readonly="readonly"></textarea>
+            </div>
+        </fieldset>
 
 </form>
 
@@ -1210,36 +1221,18 @@ Provisional precinct 3, (995 999)
 
 
 <form action="#" method="get">
-		<fieldset>
-			<legend>Stopping sample size and escalation</legend>
-			  <div>
-				<fieldset>
-
+        <fieldset>
+            <legend>Audit progress</legend>
+              <div>
+                <fieldset>
                       <span class="label" id="sizeSoFar">Ballots audited so far: 0</span>
                       <hr align="left"/>
-                      <label for="candidate1">:</label>
-
-			    </fieldset>
+                       <div class="testTable"></div>
+                </fieldset>
             </div>
-            <div>
-                <fieldset>
-                   <legend>Estimated stopping size</legend>
-			     <input type="button" name="stopping" id="stopping" onclick="findNmin();"
-			          value="Calculate" />
-			          <span class="label" id="auditComplete">&nbsp;Audit incomplete&nbsp;</span>
-			     </fieldset>
-
-			</div>
-		</fieldset>
+        </fieldset>
 
 </form>
-
-<p>
-   If the contest being audited has more than two candidates or positions,
-   the calculation above can be very conservative if overstatements do not affect the
-   margin between the winner with the fewest votes and the loser with the most votes.
-   The formula above can be modified to take that into account.
-</p>
 
 <p>
    <a href="#" class="toggleEndingSampleNotes">Show technical notes.</a>
@@ -1256,7 +1249,7 @@ Provisional precinct 3, (995 999)
 <p>
 <small>P.B. Stark, <a href="statistics.berkeley.edu/~stark">statistics.berkeley.edu/~stark</a>.
 http://statistics.berkeley.edu/~stark/Java/Html/ballotTools.htm
-Last modified 12 August 2014.</small>
+Last modified 13 August 2014.</small>
 </p>
 
 </body>
