@@ -88,13 +88,16 @@
    });
 // ------------------------------------
         var candidates = [];
-        var errBallots = [];
+        var winners = [];
+        var losers = [];
         var names = [];
         var ballots;
 
 		function addContest() {  // adds a contest
 		    candidates.push([]);
 		    names.push([]);
+		    winners.push([]);
+		    losers.push([]);
 		    var conStr = (candidates.length-1).toString();
 		    var str = '<hr align="left" id="hrCon' + conStr + '"><div class="contest" id="contest' + conStr + '" contest="' + conStr + '">' +
 		              '<span class="label">Contest ' + candidates.length.toString() +
@@ -257,27 +260,42 @@
         var votesOk = true;
         var asn = Number.NaN;
         try {
+            asn = 0;
             for (var i=0; i < candidates.length; i++) {
-               var cani = parseInt($("#voteForContest" + i.toString()).val());
-               if (candidates[i].length < cani ) {
-                   opsOk = false;
-               }
-               for (var j=0; j < candidates[i].length; j++) {
-                   candidates[i][j] = parseInt($("#nBallots" + (i+1).toString() + '_' + (j+1).toString()).val());
-               }
-               if (vSum(candidates[i]) > cani*ballots) {
-                   votesOk = false;
-               }
-               var dum = candidates[i].slice().sort(numberLessThan).reverse();
-               minMargin = Math.min(minMargin, dum[cani-1] - dum[cani]);
-               for (var j=0; j < candidates[i].length; j++) {
-                   var theCandidate = (i+1).toString() + '_' + (j+1).toString();
-                   if (candidates[i][j] > dum[cani]) {
+                var cani = parseInt($("#voteForContest" + i.toString()).val());
+                if (candidates[i].length < cani ) { // not enough candidates
+                    opsOk = false;
+                }
+                for (var j=0; j < candidates[i].length; j++) {
+                    candidates[i][j] = parseInt($("#nBallots" + (i+1).toString() + '_' + (j+1).toString()).val());
+                }
+                if (vSum(candidates[i]) > cani*ballots) { // too many votes
+                    votesOk = false;
+                }
+                var dum = candidates[i].slice().sort(numberLessThan).reverse();
+                minMargin = Math.min(minMargin, dum[cani-1] - dum[cani]);
+                winners[i] = [];
+                losers[i] = [];
+                for (var j=0; j < candidates[i].length; j++) {  // set colors; build winner and loser lists
+                    var theCandidate = (i+1).toString() + '_' + (j+1).toString();
+                    if (candidates[i][j] > dum[cani]) {
                         $("#candidate_" + theCandidate).css('backgroundColor', '#5e5');
-                   } else {
+                        winners[i].push(j);
+                    } else {
                         $("#candidate_" + theCandidate).css('backgroundColor', '');
-                   }
-               }
+                        losers[i].push(j);
+                    }
+                }
+                if (parsePercent($("#risk").val())) { // risk limit has been set; we can calculate sample size
+                    for (var j=0; j < winners[i].length; j++) {
+                        for (var k=0; k < losers[i].length; k++) {
+                            asn = Math.max(asn, findAsn(ballots,
+                                                        candidates[i][winners[i][j]],
+                                                        candidates[i][losers[i][k]])
+                                          );
+                        }
+                    }
+                }
             }
         } catch(e) {
            minMargin = 'undefined';
@@ -293,29 +311,35 @@
         } else {
             $("#theMargin").text('Smallest margin (votes): ' + commify(minMargin) + '. ');
             $("#theDilutedMargin").text(' Diluted margin: ' + commify(doubleToStr(100*minMargin/ballots,2)) + '%. ');
-            $("#asn").text('Expected sample size: undefined: ' + commify(Math.ceil(asn)) + '. ');
+            $("#asn").text('Expected sample size: ' + commify(asn) + '. ');
         }
         return(opsOk & votesOk & ballOk);
     }
 
-    function asn(risk, ballots, vw, vl) {  // returns Wald's "average sample number" (ASN)
+    function findAsn(ballots, vw, vl) {  // returns Wald's "average sample number" (ASN)
         /* risk = risk limit
            ballots = total ballots in the contest
            vw = ballots cast for the winner of the pair
            vl = ballots cast for the lower of the pair
         */
-        if (vw > vl) {
-            sw = vw/(vw+vl);
-            zw = Math.log(0.5*sw);
-            zl = Math.log(0.5*(1-sw));
-            pw = vw/ballots;
-            pl = vl/ballots;
-            expect = (Math.log(1.0/risk) + zw/2)/((1.0 - (vi + vv - vw - vl)/(totv))*(pw*zw + pl*zl));
-        } else {
-            expect = 'undefined';
-            alert('Error: Loser reported to have more votes than winner!');
+        try {
+            risk = parsePercent($("#risk").val());
+alert('risk, ballots, vw, vl' + risk + ' ' + ballots + ' ' + vw + ' ' + vl)
+            if (vw > vl) {
+                sw = vw/(vw+vl);
+                zw = Math.log(0.5*sw);
+                zl = Math.log(0.5*(1-sw));
+                pw = vw/ballots;
+                pl = vl/ballots;
+                asn = Math.ceil((Math.log(1.0/risk) + zw/2)/((1.0 - (vi + vv - vw - vl)/(totv))*(pw*zw + pl*zl)));
+            } else {
+                asn = 'undefined';
+                alert('Error: Loser reported to have more votes than winner! (' + vw + ' < ' + vl + ')');
+            }
+        } catch(e) {
+            asn = 'undefined';
         }
-        return(expect);
+        return(asn);
     }
 
     function updateVotes() {
@@ -805,14 +829,7 @@ var manifest = null;
 				   <legend>Audit parameters</legend>
 				       <label for="risk">Risk limit:</label>
 			           <input type="text" size="10" name="risk" id="risk" value="10%" />
-                       <br />
-                </fieldset>
-            </div>
-            <div>
-			     <fieldset>
-				   <legend>Expected number of ballots to inspect</legend>
-				       <input type="button" name="startSize" id="startSize" value="Calculate size" />
-			       <span class="label" id="startSampleSize">&hellip;</span>
+                       <span class="label" id="asn">Expected sample size: undefined.</span>
 			     </fieldset>
 			</div>
 		</fieldset>
