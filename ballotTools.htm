@@ -178,16 +178,16 @@
                 for (var W=0; W < winners[i].length; W++) {
                     str += '<th id="Twinner_' + i + '_' + winners[i][W] + '">' +
                             names[i][winners[i][W]] +
-                            '&nbsp;<input type="text" size="8" id="votes_for_"' + i + '_' + winners[i][W] +
+                            '&nbsp;<input type="text" size="8" id="votes_for_' + i + '_' + winners[i][W] +
                             '"  onblur="updateTestStatistic(' + i + ');" value="0"/></th>';
                 }
                 str += '</tr>';
                 for (var L=0; L < losers[i].length; L++) {
                     str += '<tr id="Tloser_'  + i + '_' + losers[i][L] + '"><th>' + names[i][losers[i][L]] +
-                           '&nbsp;<input type="text" size="8" id="votes_for_"' + i + '_' + losers[i][L] +
+                           '&nbsp;<input type="text" size="8" id="votes_for_' + i + '_' + losers[i][L] +
                             '"  onblur="updateTestStatistic(' + i + ');" value="0"/></th>';
                     for (var W=0; W < winners[i].length; W++) {
-                        str += '<td id="T_' + [i, losers[i][L], winners[i][W]].join(',') + '">1</td>';
+                        str += '<td id="T_' + [i, losers[i][L], winners[i][W]].join('_') + '">1</td>';
                     }
                     str += '</tr>';
                 }
@@ -217,11 +217,11 @@
                     hashString = winners[i][W] + ',' + losers[i][L];
                     ts = Math.pow(2*waldFactor[i][hashString], vW) *
                          Math.pow(2*(1-waldFactor[i][hashString], vL));
-                    $("#T_" + [i, losers[i][L], winners[i][W]].join(',')).text(roundToDig(ts, 2));
+                    $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).text(roundToDig(ts, 2));
                     if (ts > 1/risk) {
-                        $("#T_" + [i, losers[i][L], winners[i][W]].join(',')).css('backgroundColor', '#E55');
+                        $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).css('backgroundColor', '#E55');
                     } else {
-                        $("#T_" + [i, losers[i][L], winners[i][W]].join(',')).css('backgroundColor', '');
+                        $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).css('backgroundColor', '');
                     }
                 }
             }
