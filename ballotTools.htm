@@ -106,7 +106,7 @@
                       '<label for="contestName' + conStr + '">Contest name: </label>' +
                       '<input type="text" size="80" id="contestName' + conStr + '" class="contestName" /><br />' +
                       '<label for="voteForContest' + conStr +  '">Winners:&nbsp;</label>' +
-                      '<select id="voteForContest' + conStr + '">' +
+                      '<select id="voteForContest' + conStr + '" onchange="findMinMargin()">' +
                          '<option value="1">1</option>' +
                          '<option value="2">2</option>' +
                          '<option value="3">3</option>' +
@@ -174,7 +174,10 @@
             $(".testTable").append(str);
             str = '';
             for (var i=0; i < candidates.length; i++) {
-                str += '<tr><td></td>';
+                str += '<tr><th class="voteRow" colspan="' + (winners[i].length+1) +
+                       '" id="sizeSoFar' + i + '">Votes audited so far in ' + $("#contestName" + i).val() +
+                       ' contest: 0</span></th></tr>' +
+                       '<tr><th></th>';
                 for (var W=0; W < winners[i].length; W++) {
                     str += '<th id="Twinner_' + i + '_' + winners[i][W] + '">' +
                             names[i][winners[i][W]] +
@@ -193,6 +196,8 @@
                 }
             }
             $("#testStatistic tbody").append(str);
+            $("#testStatistic td").css('backgroundColor', '#E55');
+            $(".voteRow").css('backgroundColor', '#999');
             // populate the Wald factor matrix
             waldFactor = [];
             for (var i=0; i < candidates.length; i++) {
@@ -210,21 +215,26 @@
 
         function updateTestStatistic(i) { // updates the test statistic for contest i
             risk = parsePercent($("#risk").val());
+            var totVotes = 0;
             for (var W=0; W < winners[i].length; W++) {
                 vW = parseInt($("#votes_for_" + i + '_' + winners[i][W]).val());
+                totVotes += vW;
                 for (var L=0; L < losers[i].length; L++) {
                     vL = parseInt($("#votes_for_" + i + '_' + losers[i][L]).val());
+                    totVotes += vL;
                     hashString = winners[i][W] + ',' + losers[i][L];
-                    ts = Math.pow(2*waldFactor[i][hashString], vW) *
-                         Math.pow(2*(1-waldFactor[i][hashString], vL));
+                    ts = 1.0/(Math.pow(2*waldFactor[i][hashString], vW) *
+                         Math.pow(2*(1-waldFactor[i][hashString]), vL));
                     $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).text(roundToDig(ts, 2));
-                    if (ts > 1/risk) {
-                        $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).css('backgroundColor', '#E55');
+                    if (ts <= risk) {
+                        $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).css('backgroundColor', '#5E5');
                     } else {
-                        $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).css('backgroundColor', '');
+                        $("#T_" + [i, losers[i][L], winners[i][W]].join('_')).css('backgroundColor', '#E55');
                     }
                 }
             }
+            $("#sizeSoFar_" + i).text("Votes audited so far in " + $("#contestName" + i).val()
+                 + " contest: " + commify(totVotes));
         }
 
 
@@ -305,7 +315,6 @@
             for (var i=0; i < parseInt($("#samMany").val()); i++) {
                 $("#samNum").val(parseInt($("#samNum").val()) + 1);
                 hashMe();
-                $("#sizeSoFar").text('Ballots audited so far: ' + sample[0].length.toString());
             }
         }
 
@@ -716,7 +725,7 @@ var manifest = null;
 // -->
 </script>
 
-<title>Tools for Comparison Risk-Limiting Election Audits</title>
+<title>Tools for Ballot-Polling Risk-Limiting Election Audits</title>
 
 </head>
 
@@ -1203,10 +1212,18 @@ Provisional precinct 3, (995 999)
 <h2>Should more ballots be audited?</h2>
 
 <p>
-   The stopping sample size tool determines whether enough ballots have been examined for the audit to stop,
-   and if not, estimates how many more ballots will need to be audited.
-   The answer depends on the risk limit, the margin, and the number of votes for
-   each candidate found in a manual inspection of the the sample
+   The audit looks at every (winner, loser) pair in each contest.
+   Auditing continues until there is strong evidence that every winner in a contest
+   got more votes than every loser in the contest.
+   It does this by considering (winner, loser) pairs, which are represented
+   in the table below.
+   The numbers in the table all start at 1.
+   Votes for a winner will decrease the numbers in that winner's column for that winner's
+   contest.
+   Votes for a loser will increase the numbers in that loser's row for that loser's
+   contest.
+   The audit continues until all the numbers are not larger than the risk limit.
+   E.g., if the risk limit is 10%, the audit stops when the numbers in the table are all less than 0.1.
 </p>
 
 
@@ -1214,13 +1231,7 @@ Provisional precinct 3, (995 999)
 <form action="#" method="get">
         <fieldset>
             <legend>Audit progress</legend>
-              <div>
-                <fieldset>
-                      <span class="label" id="sizeSoFar">Ballots audited so far: 0</span>
-                      <hr align="left"/>
-                       <div class="testTable"></div>
-                </fieldset>
-            </div>
+              <div class="testTable"></div>
         </fieldset>
 
 </form>
