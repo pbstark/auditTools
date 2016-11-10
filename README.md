@@ -1,4 +1,4 @@
-ballotPolling
+auditTools
 =============
 
-web-based tool for ballot-polling risk-limiting audits
+tool for ballot-polling risk-limiting audits and ballot-level comparison risk-limiting audits
