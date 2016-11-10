@@ -9,37 +9,34 @@
 <link rel="shortcut icon" href="../../Pics/vote.ico"/>
 <link rel="stylesheet" type="text/css" href="../../pbsDefault.css"/>
 <link rel="stylesheet" type="text/css" href="../pbsDefault.css"/>
-<link rel="stylesheet" type="text/css" href="./pbsDefault.css"/>
 <link rel="stylesheet" type="text/css" href="../Java/Jquery-ui/Current/jquery-ui.min.css" />
 <link rel="stylesheet" type="text/css" href="../../Java/Jquery-ui/Current/jquery-ui.min.css" />
-<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" />
-
 
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "17 October 2014 12:53:59 PDT";
-    // copyright 2011&ndash;2014 by P.B. Stark, statistics.berkeley.edu/~stark
+    pageModDate = "8 November 2016 23:47:59 PDT";
+    // copyright 2011&ndash;2014 by P.B. Stark, statistics.berkeley.edu/~stark, Hriday, Rachel.
     // All rights reserved.
 // -->
 </script>
 
-<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
-<script type="text/javascript" src="./sha256.js"></script>
-<script type="text/javascript" src="./BigInt.js"></script>
-
-<!--
 <script type="text/javascript" src="../../Java/Jquery/Current/jquery.min.js"></script>
 <script type="text/javascript" src="../../Java/Jquery-ui/Current/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../Java/Jquery/Current/jquery.flot.js"></script>
 <script type="text/javascript" src="../../Java/Jquery/Current/sha256.js"></script>
 <script type="text/javascript" src="../../Java/Jquery/Current/BigInt.js"></script>
 
 <script type="text/javascript" src="../Java/Jquery/Current/jquery.min.js"></script>
 <script type="text/javascript" src="../Java/Jquery-ui/Current/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../Java/Jquery/Current/jquery.flot.js"></script>
 <script type="text/javascript" src="../Java/Jquery/Current/sha256.js"></script>
 <script type="text/javascript" src="../Java/Jquery/Current/BigInt.js"></script>
--->
+
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
 
 <script type="text/javascript"><!--
 
@@ -757,7 +754,9 @@ var manifest = null;
 <p>
    This page implements some tools to conduct &quot;ballot-polling&quot; risk-limiting audits as described in
    <a href="http://statistics.berkeley.edu/~stark/Preprints/gentle12.pdf">A Gentle Introduction to
-   Risk-Limiting Audits</a> (AGI), by Lindeman and Stark.
+   Risk-Limiting Audits</a> (AGI), by Lindeman and Stark, and
+   <a href="https://www.usenix.org/system/files/conference/evtwote12/evtwote12-final27.pdf">
+   BRAVO: Ballot-polling Risk-limiting Audits to Verify Outcomes</a>, by Lindeman, Stark, and Yates.
    For an implementation of tools for &quot;comparison&quot; risk-limiting audits as described in AGI, see
    <a href="./auditTools.htm">http://statistics.berkeley.edu/~stark/Vote/auditTools.htm</a>.
 </p>
@@ -779,14 +778,15 @@ var manifest = null;
 <p>
   There are many methods for conducting risk-limiting audits.
   This page performs calculations for a particularly simple method
-  described in <a href="http://statistics.berkeley.edu/~stark/Preprints/nongeek12.pdf">AGI</a>,
+  described in <a href="http://statistics.berkeley.edu/~stark/Preprints/gentle12.pdf">AGI</a>,
   a <em>ballot-polling audit</em>.
 </p>
 
 
 <p>
    The expected sample size calculations for this method depend on the risk limit and the
-   reported margins.
+   reported margins; the expected sample size calculation
+   assumes that the reported margins are correct.
 </p>
 
 <p>
@@ -924,8 +924,26 @@ var manifest = null;
 <p><a href="#" class="toggleStartingSampleNotes">Show technical notes.</a></p>
 <p class="startingSampleNotes notes">
    The initial sample size form implements this formula from
-   <a href="http://statistics.berkeley.edu/~stark/Preprints/nongeek12.pdf">AGI</a>:
-   FIX ME!
+   <a href="https://www.usenix.org/system/files/conference/evtwote12/evtwote12-final27.pdf">BRAVO</a>:
+</p>   
+<p class="startingSampleNotes notes">
+   $$ 
+      \mbox{ASN}_{w,\ell} \approx \frac {\ln(1/\alpha) + \ln(2s_w)/2}{ p_w \ln(2s_w) + p_\ell \ln(2 - 2s_w)},
+   $$
+</p>
+<p class="startingSampleNotes notes">
+   where \(w\) is a candidate reported to have won, \(\ell\) is a candidate reported to have lost,
+   \(p_c\) is the fraction of votes for candidate \(c\) among all ballots,
+   including undervotes and invalid ballots, and
+</p>
+<p class="startingSampleNotes notes">
+   $$
+       s_c \equiv \frac{p_c}{\sum_j p_j}.
+   $$
+</p>
+<p class="startingSampleNotes notes">
+   The overall average sample number is the maximum of \(\mbox{ASN}_{w,\ell}\) over all
+   (winner, loser) pairs \((w, \ell)\).
 </p>
 
 <h2>Random sampling</h2>
@@ -1268,7 +1286,7 @@ Provisional precinct 3, (995 999)
 <p>
 <small>P.B. Stark, <a href="statistics.berkeley.edu/~stark">statistics.berkeley.edu/~stark</a>.
 http://statistics.berkeley.edu/~stark/Java/Html/ballotTools.htm
-Last modified 18 August 2014.</small>
+Last modified 8 November 2016.</small>
 </p>
 
 </body>
