@@ -12,7 +12,7 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "26 February 2017 13:09 PDT";
+    pageModDate = "27 March 2017 15:19 PDT";
     // copyright 2011&ndash;2017 by P.B. Stark, statistics.berkeley.edu/~stark
     // License CC-BY 2.0 https://creativecommons.org/licenses/by/2.0/
 // -->
@@ -151,7 +151,7 @@
                        yaxis: { min: -1, max: maxy+1 },
                        legend: { position: "nw" }
                      });
-            $("#plotTitle").text("Final sample size as a function of observed number of 1-vote overstatements, 10% risk limit");
+            $("#plotTitle").text("Final sample size as a function of observed number of 1-vote overstatements, 5% risk limit");
         } else {
             data = new Array(errRates.length);
             for (var j = 0; j < errRates.length; j++) {
@@ -182,7 +182,7 @@
                        yaxis: { min: -1, max: maxy+1 },
                        legend: { position: "ne" }
                      });
-            $("#plotTitle").text("Expected sample size as a function of the diluted margin, 10% risk limit");
+            $("#plotTitle").text("Expected sample size as a function of the diluted margin, 5% risk limit");
         }
     }
 
@@ -395,7 +395,7 @@
 		}
 
     gamma = 1.03905;
-    alpha = 0.1;
+    alpha = 0.05;
 
 
     function nmin(alpha, gamma, m, o1, o2, u1, u2) {
@@ -1015,13 +1015,13 @@ var manifest = null;
    as well as the risk limit.
    The following graph plots the sample size as a function of the number of 1-vote
    overstatement errors the audit finds, for diluted margins of 0.5%, 1%, 5%, 10%, and 20%, all at
-   risk limit 10%.
+   risk limit 5%.
    It also plots the expected final sample size as a function of the diluted margin,
    for various rates of observed 1-vote overstatements.
    The plot assumes that there are no 2-vote overstatements and no understatements.
 </p>
 
-<h3 id="plotTitle">Expected sample size as a function of the diluted margin, 10% risk limit</h3>
+<h3 id="plotTitle">Expected sample size as a function of the diluted margin, 5% risk limit</h3>
 <div id="placeholder" style="width:800px;height:400px"></div>
 <p>
    <input type="checkbox" name="byMargin" id="byMargin" value="byMargin"  />Plot final sample size as a function of observed 1-vote overstatements
@@ -1057,7 +1057,7 @@ var manifest = null;
    Enter the total number of ballots cast in all contests to be audited.
    Add candidates and contests as necessary until the results from all contests have been
    entered.
-   Enter the desired risk limit and the expected rates of one- and two-vote differences.
+   Enter the desired risk limit and the expected rates of one-vote and two-vote differences.
    Select whether to round up the expected number of differences of each type.
    Finally, click &quot;calculate&quot; to find the starting sample size.
 </p>
@@ -1086,7 +1086,7 @@ var manifest = null;
 				<fieldset>
 				   <legend>Audit parameters</legend>
 				       <label for="risk">Risk limit:</label>
-			           <input type="text" size="10" name="risk" id="risk" value="10%"
+			           <input type="text" size="10" name="risk" id="risk" value="5%"
 			                  onblur="clearSampleSizes()"/>
                        <br />
                        <span class="label">Expected rates of differences (as decimal numbers): <br />
