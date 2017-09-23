@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml"
+<html lang="en"  lang="en"  xmlns="http://www.w3.org/1999/xhtml"
 	  xmlns:pref="http://www.w3.org/2002/Math/preference"
       pref:renderer="css">
 
@@ -12,8 +12,8 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "27 March 2017 15:19 PDT";
-    // copyright 2011&ndash;2017 by P.B. Stark, statistics.berkeley.edu/~stark
+    pageModDate = "23 September 2017 11:54 PDT";
+    // Copyright (c) 1997--2017 by P.B. Stark, statistics.berkeley.edu/~stark
     // License CC-BY 2.0 https://creativecommons.org/licenses/by/2.0/
 // -->
 </script>
@@ -120,6 +120,7 @@
     var marStep = 0.5;
     var maxMar = 30;
     var data = new Array();
+    var fhcText = 'full hand count expected';
 
     function plotSample() {
         if ($("#byMargin").prop('checked')) {
@@ -412,35 +413,35 @@
     }
 
 
-/*    function nminFrac(alpha, gamma, m, o1, o2, u1, u2) {
-        return(Math.ceil(-2*gamma*(Math.log(alpha) + o1*Math.log(1-1/(2*gamma)) +
-              o2*Math.log(1 - 1/gamma) + u1*Math.log(1+1/(2*gamma)) + u2*Math.log(1+1/gamma)) / m));
-    }
-*/
-
     function nminFromRates(alpha, gamma, m, r1, r2, s1, s2, roundUp1, roundUp2) {
-        var n0 = -2*gamma*Math.log(alpha) /
-                      (m + 2*gamma*(r1*Math.log(1-1/(2*gamma)) +
-                       r2*Math.log(1 - 1/gamma) + s1*Math.log(1+1/(2*gamma)) + s2*Math.log(1+1/gamma))
-                      );
-        var o1, o2, u1, u2;
-        for (var i=0; i < 3; i++) {
-            if (roundUp1) {
-                 o1 = Math.ceil(r1*n0);
-                 u1 = Math.ceil(s1*n0);
-            } else {
-                 o1 = Math.round(r1*n0);
-                 u1 = Math.round(s1*n0);
-
+        var n0 = fhcText;
+        denom = Math.log( 1 - m/(2*gamma) ) -
+                r1*Math.log(1 - 1/(2*gamma)) -
+                r2*Math.log(1 - 1/gamma) -
+                s1*Math.log(1 + 1/(2*gamma)) -
+                s2*Math.log(1 + 1/gamma);
+        if (denom < 0) { // expect the audit to terminate without a full hand count
+            n0 = Math.ceil(Math.log(alpha)/denom);
+            if (roundUp1 | roundUp2) { // iterate to deal with rounding
+                var o1, o2, u1, u2;
+                for (var i=0; i < 3; i++) {
+                    if (roundUp1) {
+                        o1 = Math.ceil(r1*n0);
+                        u1 = Math.ceil(s1*n0);
+                    } else {
+                        o1 = Math.round(r1*n0);
+                        u1 = Math.round(s1*n0);
+                    }
+                    if (roundUp2) {
+                        o2 = Math.ceil(r2*n0);
+                        u2 = Math.ceil(s2*n0);
+                    } else {
+                        o2 = Math.round(r2*n0);
+                        u2 = Math.round(s2*n0);
+                    }
+                    n0 = nmin(alpha, gamma, m, o1, o2, u1, u2);
+                }
             }
-            if (roundUp2) {
-                 o2 = Math.ceil(r2*n0);
-                 u2 = Math.ceil(s2*n0);
-            } else {
-                 o2 = Math.round(r2*n0);
-                 u2 = Math.round(s2*n0);
-            }
-            n0 = nmin(alpha, gamma, m, o1, o2, u1, u2);
         }
         return(n0);
     }
@@ -1759,7 +1760,7 @@ Provisional precinct 3, (995 999)
 <p>
 <small>P.B. Stark, <a href="statistics.berkeley.edu/~stark">statistics.berkeley.edu/~stark</a>.
 http://statistics.berkeley.edu/~stark/Java/Html/auditTools.htm
-Last modified 26 February 2017.</small>
+Last modified 23 September 2017.</small>
 </p>
 
 </body>
