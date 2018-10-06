@@ -1,4 +1,4 @@
-function sprt(sample, popsize, alpha, Vw, Vl, null_margin=0) {
+function ballot_polling_sprt(sample, popsize, alpha, Vw, Vl, null_margin=0) {
 	// Set parameters
 	var beta, lower, upper, n, Wn, Ln, Un, decision
 	beta = 0;
