@@ -1,4 +1,32 @@
 function ballot_polling_sprt(sample, popsize, alpha, Vw, Vl, null_margin=0) {
+	/**
+    Conduct Wald's SPRT for the difference in population counts for two out of three categories:
+    
+    H_0: Nl = Nw + null_margin
+    H_1: Nl = Vl, Nw = Vw with Vw>Vl
+    
+    The type II error rate, usually denoted beta, is set to 0%.
+    In doing so, the inverse of the likelihood ratio can be interpreted as a
+    p-value.
+    
+    Parameters
+    ----------
+    sample : array-like
+        random sample to audit. Elements should be labelled 1 (ballots for w),
+        0 (ballots for l), and np.nan (the rest)
+    popsize : int
+        total size of population being audited
+    alpha : float
+        desired type 1 error rate
+    Vw : int
+        total number of votes for w under the alternative hypothesis
+    Vl : int
+        total number of votes for l under the alternative hypothesis
+    null_margin : int
+        vote margin between w and l under the null hypothesis; optional
+        (default 0)
+    Returns dictionary.
+    **/
 	// Set parameters
 	var beta, lower, upper, n, Wn, Ln, Un, decision
 	beta = 0;
