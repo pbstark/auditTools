@@ -1,4 +1,4 @@
-function ballot_polling_sprt(sample, popsize, alpha, Vw, Vl, null_margin=0) {
+function ballot_polling_sprt(sample, popsize, alpha, Vw, Vl, null_margin) {
 	/**
     Conduct Wald's SPRT for the difference in population counts for two out of three categories:
     
@@ -28,7 +28,11 @@ function ballot_polling_sprt(sample, popsize, alpha, Vw, Vl, null_margin=0) {
     Returns dictionary.
     **/
 	// Set parameters
-	var beta, lower, upper, n, Wn, Ln, Un, decision
+	if (null_margin == null) {
+		null_margin = 0
+	}
+
+	var beta, lower, upper, n, Wn, Ln, Un, decision, null_margin
 	beta = 0;
 	lower = beta / (1 - alpha);
 	upper = (1 - beta) / alpha;
