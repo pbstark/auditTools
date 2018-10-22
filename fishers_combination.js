@@ -30,6 +30,13 @@ function argMax(array) {
 	return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
 }
 
+function argMin(array) {
+	/**
+	Retrieve the array key corresponding to the largest element in the array.
+	**/
+	return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] < r[0] ? a : r))[1];
+}
+
 function arange(start, end, step=1){
   	var rangeArray = [];
   	if(start < end){
@@ -229,13 +236,13 @@ function calculate_lambda_range(N_w1, N_l1, N1, N_w2, N_l2, N2) {
     var V1 = N_w1 - N_l1;
     var V2 = N_w2 - N_l2;
     var V = V1+V2;
-    var lb = Math.min([2*N1/V, 1+2*N2/V,1-(N2+V2)/V])
-    var ub = Math.max([-2*N1/V, 1-2*N2/V,  1+(N2-V2)/V])
+    var lb = argMin([2*N1/V, 1+2*N2/V,1-(N2+V2)/V])
+    var ub = argMax([-2*N1/V, 1-2*N2/V,  1+(N2-V2)/V])
     return (lb, ub)
 };
 
 function bound_fisher_fun(N_w1, N_l1, N1, N_w2, N_l2, N2,
-                     pvalue_funs, plausible_lambda_range=None, stepsize=0.5) {
+                     pvalue_funs, plausible_lambda_range=null, stepsize=0.5) {
 
         if plausible_lambda_range is null:
             plausible_lambda_range = calculate_lambda_range(N_w1, N_l1, N1, N_w2, N_l2, N2)
@@ -251,8 +258,8 @@ function bound_fisher_fun(N_w1, N_l1, N1, N_w2, N_l2, N2,
         var lam = lambda_lower
 
         while (lam< lambda_upper + 1) {
-            var pvalue1 = Math.min([1, cvr_pvalue(lam)])
-            var pvalue2 = Math.min([1, nocvr_pvalue(1-lam)])
+            var pvalue1 = argMin([1, cvr_pvalue(lam)])
+            var pvalue2 = argMin([1, nocvr_pvalue(1-lam)])
             cvr_pvalues.push(pvalue1)
             nocvr_pvalues.push(pvalue2)
             lambdas.push(lam)
