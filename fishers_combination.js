@@ -30,6 +30,13 @@ function argMax(array) {
 	return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
 }
 
+function argMin(array) {
+	/**
+	Retrieve the array key corresponding to the largest element in the array.
+	**/
+	return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] < r[0] ? a : r))[1];
+}
+
 function arange(start, end, step=1){
   	var rangeArray = [];
   	if(start < end){
@@ -148,5 +155,135 @@ function maximize_fisher_combined_pvalue(N, overall_margin, pvalue_funs, precise
             'allocation lambda' : alloc_lambda
             };
     return dict;
-}
+};
 
+function simulate_fisher_combined_audit(N_w1, N_l1, N1, N_w2, N_l2, N2, n1, n2, alpha,
+    reps=10000, verbose=false, plausible_lambda_range=null) {
+
+    var margin = (N_w1+N_w2)-(N_l1+N_l2);
+    var N1 = N_w1+N_l1;
+    var N2 = N_w2+N_l2;
+
+    var margin = (N_w1+N_w2)-(N_l1+N_l2);
+    var N1 = N_w1+N_l1;
+    var N2 = N_w2+N_l2;
+    var pop2 = new Array(N2).fill(0);
+
+
+    for (var i = 0; i < N_w2; i++) {
+        pop2[i] = 1;
+    };
+
+    for (var i = N_w2; i < N_w2 + N_l2; i++) {
+        pop2[i] = 0;
+    };
+
+    for (var i = N_w2 + N_l2; i < N2; i++) {
+        pop2[i] = NaN;
+    };
+
+
+    function cvr_pvalue(alloc) {
+        return ballot_comparison_pvalue(n=n1, gamma=1.03905, o1=0, u1=0, o2=0, u2=0, reported_margin=margin, N=N1, null_lambda=alloc)
+    };
+
+
+    var fisher_pvalues = new Array(reps).fill(0);
+
+
+    function getRandomSubarray(arr, size) {
+        var shuffled = arr.slice(0), i = arr.length, temp, index;
+        while (i--) {
+            index = Math.floor((i + 1) * Math.random());
+            temp = shuffled[index];
+            shuffled[index] = shuffled[i];
+            shuffled[i] = temp;
+        }
+        return shuffled.slice(0, size);
+    }
+
+    for (var i = 0; i < reps; i++) {
+        if (verbose) {
+            console.log(i)
+        }
+
+        var sam = getRandomSubarray(pop2, n2)
+
+        function nocvr_pvalue(alloc) {
+            return ballot_polling_sprt(sample=sam, popsize=N2, alpha=alpha, Vw=N_w2, Vl=N_l2, null_margin=(N_w2-N_l2) - alloc*margin)['pvalue']
+        };
+
+        fisher_pvalues[i] = maximize_fisher_combined_pvalue(N=(N1, N2),
+                               overall_margin=margin,
+                               pvalue_funs=[cvr_pvalue, nocvr_pvalue],
+                               precise=true,
+                               plausible_lambda_range=plausible_lambda_range)['max_pvalue']
+    }
+    var sum = 0;
+
+    for(var i = 0; i < fisher_pvalues.length; i++ ){
+        if (fisher_pvalues[i] <= alpha) {
+            sum += 1
+        }
+    };
+
+    var avg = sum/fisher_pvalues.length;
+    return avg
+};
+
+
+function calculate_lambda_range(N_w1, N_l1, N1, N_w2, N_l2, N2) {
+    var V1 = N_w1 - N_l1;
+    var V2 = N_w2 - N_l2;
+    var V = V1+V2;
+    var lb = argMin([2*N1/V, 1+2*N2/V,1-(N2+V2)/V])
+    var ub = argMax([-2*N1/V, 1-2*N2/V,  1+(N2-V2)/V])
+    return (lb, ub)
+};
+
+function bound_fisher_fun(N_w1, N_l1, N1, N_w2, N_l2, N2,
+                     pvalue_funs, plausible_lambda_range=null, stepsize=0.5) {
+
+        if plausible_lambda_range is null:
+            plausible_lambda_range = calculate_lambda_range(N_w1, N_l1, N1, N_w2, N_l2, N2)
+        var lambda_lower = plausible_lambda_range[0]
+        var lambda_upper = plausible_lambda_range[1]
+
+        var cvr_pvalue = pvalue_funs[0]
+        var nocvr_pvalue = pvalue_funs[1]
+        var cvr_pvalues = []
+        var nocvr_pvalues = []
+        var lambdas = []
+
+        var lam = lambda_lower
+
+        while (lam< lambda_upper + 1) {
+            var pvalue1 = argMin([1, cvr_pvalue(lam)])
+            var pvalue2 = argMin([1, nocvr_pvalue(1-lam)])
+            cvr_pvalues.push(pvalue1)
+            nocvr_pvalues.push(pvalue2)
+            lambdas.push(lam)
+            lam += stepsize
+        }
+
+        lower_bounds = []
+        upper_bounds = []
+
+        for (var i = 0; i < cvr_pvalues - 1; i++) {
+            lower_bounds.push(fisher_combined_pvalue([cvr_pvalues[i+1], nocvr_pvalues[i]]))
+            upper_bounds.push(fisher_combined_pvalue([cvr_pvalues[i], nocvr_pvalues[i+1]]))
+        }
+
+        sample_points = []
+
+        for (var i = 0; i < cvr_pvalues - 1; i++) {
+            sample_points.push(fisher_combined_pvalue([cvr_pvalues[i], nocvr_pvalues[i]]))
+        }
+
+        return {'sample_points' : sample_points,
+                'upper_bounds' : upper_bounds,
+                'lower_bounds' : lower_bounds,
+                'grid' : lambdas
+                }
+
+}
