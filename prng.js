@@ -1,43 +1,88 @@
 class sha256Random {
-    constructor(seed) {
+
+HASHLEN = 256 # Number of bits in a hash output
+RECIP_HASHLEN = 2**-HASHLEN
+
+    function constructor(seed) {
         if (seed == null) {
             this.seed = Math.random();
         } else {
             this.seed = seed;
         }
-        this.seq = 0;
+        this.counter = 0;
+        this.randbits_remaining = 0
         this.hasher = new jsSHA(seed.toString() + ",0", "ASCII");    
     }
     
-    getseed() {
+    function getstate() {
         return(this.seed);
     }
     
-    setseed(seed) { 
+    function setseed(seed) { 
         if (seed == null) {
             this.seed = Math.random();
         } else {
             this.seed = seed;
         }
-        this.seq = 0;
+        this.counter = 0;
+        this.rand_bits = null;
         this.hasher = new jsSHA(seed.toString() + ",0", "ASCII");
     }
     
-    jumpahead(k) {
+    function jumpahead(k) {
         try {
-            this.seq += k;
+            this.counter += k;
             this.hasher.update("0".repeat(k));
         } catch e {
             console.log(e.toString());
+            throw new Error(e);
         }
     }
     
-    nextRandom() {
+    function nextRandom() {
         r = str2bigInt(this.hasher.getHash("SHA-256", "HEX"), 16, 0)
-        this.seq += 1;
+        this.counter += 1;
         this.hasher.update("0");
-        return(r/2**256)
+        return(r*RECIP_HASHLEN)
     }
+    
+    function nextRandom() {
+        hash_input = (str(self.baseseed) + "," + str(self.counter)).encode('utf-8')
+        # Apply SHA-256, interpreting hex output as hexadecimal integer
+        # to yield 256-bit integer (a python "long integer")
+        hash_output = int(hashlib.sha256(hash_input).hexdigest(),16)
+        self.next()
+        return(hash_output)
+    }
+                              
+    function getrandbits(k) {
+        if (typeof(randbits) == undefined || randbits is null || randbits.len == 0) {                         # initialize the cache
+            self.randbits = self.nextRandom()
+            self.randbits_remaining = HASHLEN
+        while k > self.randbits_remaining{
+            self.randbits = (self.nextRandom() << self.randbits_remaining | self.randbits)  # accounts for leading 0s
+            self.randbits_remaining = self.randbits_remaining + HASHLEN
+        val = (self.randbits & int(2**k-1))            # harvest least significant k bits
+        self.randbits_remaining = self.randbits_remaining - k
+        self.randbits = self.randbits >> k                 # discard the k harvested bits
+        return val
+    }
+        
+    function randbelow_from_randbits(n) {
+        k = int(n-1).bit_length()
+        r = self.getrandbits(k)   # 0 <= r < 2**k
+        while int(r) >= n:
+            r = self.getrandbits(k)
+        return int(r)
+    }        
+        
+    function randint(a, b, size):
+        if size==None:
+            return a + self.randbelow_from_randbits(b-a)
+        else:
+            return np.reshape(np.array([a + self.randbelow_from_randbits(b-a) for i in np.arange(np.prod(size))]), size)
+
+    
     
     function hashMe() {  // hashes the next sequence number
         hasher = new jsSHA($("#seedValue").val() + "," +
@@ -46,22 +91,9 @@ class sha256Random {
         if ($("#nObj").val() == 'NaN') {
             $("#nObj").val(1);
         }
-        try {
-            sample[0].push($("#samNum").val());
-            sample[1].push(hasher.getHash("SHA-256", "HEX"));
-            sample[2].push(1 +
-                             modInt( str2bigInt(hasher.getHash("SHA-256", "HEX"), 16, 0),
+        modInt( str2bigInt(hasher.getHash("SHA-256", "HEX"), 16, 0),
                                       parseInt($("#nObj").val())
                                    )
                            );
-            writeList();
-            $("#sortedList").val(sample[2].slice().sort(numberLessThan).join(','));
-            $("#ballotList").val($("#sortedList").val());
-            var deDupeList = sortMultiple(sample[2], numberLessThan);
-            $("#sortedDedupeList").val(deDupeList[0].join(','));
-            if (vMinMax(deDupeList[1])[1] > 1) {
-                 $("#duplicates").val('Ballot, multiplicity\n' + arrayToString(findRepeats(deDupeList)));
-            }
-        } catch(e) {
         }
     }
