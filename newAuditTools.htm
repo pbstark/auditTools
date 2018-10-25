@@ -223,15 +223,15 @@
 		                 '<option value="8">8</option>' +
 		                 '<option value="9">9</option>' +
 		                 '<option value="10">10</option>' +
-		              '</select><p><span class="label">Reported votes:</span></p></div><br />' +
+		              '</select><p><span class="label">Reported votes:</span></p>'+
+                  '<table id="contest_table'+conStr+'">'+
 
-                    // '<table>\
-                    //   <tr>\
-                    //    <th>Candidate Name</th>\
-                    //    <th>Votes in Stratum 1</th>\
-                    //    <th>Votes in Stratum 2</th>\
-                    //   </tr>' +
-
+                    '<tr>\
+                       <th>Candidate Name</th>\
+                       <th>Votes in Stratum 1</th>\
+                       <th>Votes in Stratum 2</th>\
+                      </tr>' +
+                    '</table>'+'</div><br />' +
 		              '<div class="addCandidate" id="addCandidate' + conStr + '" contest="' + conStr + '">' +
 		              '<input type="button" id="addCandidateButton' + conStr +
 		              '" value="Add candidate to contest ' + candidates.length.toString() +
@@ -240,10 +240,11 @@
 		              '" value="Remove last candidate from contest ' + candidates.length.toString() +
 		              '" contest="' + conStr + '"/></div>';
 		    $(".contestList").append(str);
-		    $("#contest" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
-            $("#contest" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
-		    var conRef = "#contest" + conStr;
+		    $("#contest_table" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
+        $("#contest_table" + (candidates.length-1).toString()).append(addCandidate(candidates.length-1));
+		    var conRef = "#contest_table" + conStr;
 		    var candRefLast = '.candidate.contest' + candidates.length + ':last';
+        // selects the last element of candidate.contest[number] class
 		    var thisContest = candidates.length-1;
 		    $("#contestName" + conStr).blur(function(){names[conStr][0] = this.value;});
 		    $("#addCandidateButton" + conStr).click(function(){$(conRef).append(addCandidate(conStr));updateVotes();});
@@ -279,30 +280,15 @@
 		    //        '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>' + 
       //          '<label for="nBallots2' + theCandidate + '">&nbsp;&nbsp;Votes in Stratum 2: ' + '</label>' +
       //          '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>');
-      if (candidates[contest].length == 1) {
-        return(
-              '<tr>\
-               <th>Candidate Name</th>\
-               <th>Votes in Stratum 1</th>\
-               <th>Votes in Stratum 2</th>\
-               <th>Total Votes</th>\
-              </tr>\
-              <tr>\
-                <td><input type="text" size="40"/></td>\
-                <td><input type="text" size="20"/></td>\
-                <td><input type="text" size="20"/></td>\
-                <td>Votes 1 + Votes 2</td>\
-              </tr>');
-      }
-        return(
-          //'<table>\    
-          '<tr>\
-            <td><input type="text" size="40"/></td>\
+        return(   
+          '<tr class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
+               'id="candidate_' +  theCandidate + '">' +
+            '<td><input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
+                   (candidates[contest].length-1) + ']=this.value;" /></td>\
             <td><input type="text" size="20"/></td>\
             <td><input type="text" size="20"/></td>\
             <td>Votes 1 + Votes 2</td>\
           </tr>'
-          //</table>'
         );
 		}
 
