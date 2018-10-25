@@ -230,6 +230,7 @@
                        <th>Candidate Name</th>\
                        <th>Votes in Stratum 1</th>\
                        <th>Votes in Stratum 2</th>\
+                       <th> Total Votes</th>\
                       </tr>' +
                     '</table>'+'</div><br />' +
 		              '<div class="addCandidate" id="addCandidate' + conStr + '" contest="' + conStr + '">' +
@@ -285,12 +286,22 @@
                'id="candidate_' +  theCandidate + '">' +
             '<td><input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
                    (candidates[contest].length-1) + ']=this.value;" /></td>\
-            <td><input type="text" size="20"/></td>\
-            <td><input type="text" size="20"/></td>\
-            <td>Votes 1 + Votes 2</td>\
+            <td><input type="text" size="20" id="nBallotsSt1" onblur="sumStratum(&quot;nBallotsSt1&quot;, &quot;nBallotsSt2&quot;, &quot;answer&quot;)"/></td>\
+            <td><input type="text" size="20" id="nBallotsSt2" onblur="sumStratum(&quot;nBallotsSt1&quot;, &quot;nBallotsSt2&quot;, &quot;answer&quot;)"/></td>\
+            <td><input type="text" size="20" id="answer" readonly="readonly" /></td>\
           </tr>'
         );
+
 		}
+
+
+  function sumStratum(id1, id2, id3) {
+      var n1 = parseInt(document.getElementById(id1).value);
+      var n2 = parseInt(document.getElementById(id2).value);
+      var n3 = n1 + n2;
+      var ans = document.getElementById(id3);
+      ans.value = n3
+    }
 
 	function addBallot() {
 		    ballots.push([]);
