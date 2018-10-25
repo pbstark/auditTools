@@ -281,16 +281,23 @@
 		    //        '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>' + 
       //          '<label for="nBallots2' + theCandidate + '">&nbsp;&nbsp;Votes in Stratum 2: ' + '</label>' +
       //          '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>');
-        return(   
+      return(   
           '<tr class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
                'id="candidate_' +  theCandidate + '">' +
-            '<td><input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
-                   (candidates[contest].length-1) + ']=this.value;" /></td>\
-            <td><input type="text" size="20" id="nBallotsSt1" onblur="sumStratum(&quot;nBallotsSt1&quot;, &quot;nBallotsSt2&quot;, &quot;answer&quot;)"/></td>\
-            <td><input type="text" size="20" id="nBallotsSt2" onblur="sumStratum(&quot;nBallotsSt1&quot;, &quot;nBallotsSt2&quot;, &quot;answer&quot;)"/></td>\
-            <td><input type="text" size="20" id="answer" readonly="readonly" /></td>\
+            '<td><input type="text" size="40" value= "First Last" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
+                   (candidates[contest].length-1) + ']=this.value;" /></td>' +
+
+          '<td><input type="text" size="20" value=0 id="nBallots1' + theCandidate + '"' +  
+            'onblur=' + 
+          'sumStratum("nBallots1' + theCandidate + '"' + ',"nBallots2' + theCandidate + '"' + ',"answer' + theCandidate + '")' + '></td>' + 
+          
+          '<td><input type="text" size="20" value=0 id="nBallots2' + theCandidate + '"' +  
+            'onblur=' + 
+          'sumStratum("nBallots1' + theCandidate + '"' + ',"nBallots2' + theCandidate + '"' + ',"answer' + theCandidate + '")' + '></td>' +
+
+          '<td><input type="text" size="20" value=0 id="answer' + theCandidate + '"' +  'readonly="readonly" /></td>\
           </tr>'
-        );
+      );
 
 		}
 
