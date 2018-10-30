@@ -421,10 +421,22 @@
         return(opsOk & votesOk & ballOk);
     }
 
-    function findAsn(ballots, vw, vl) {  // returns Wald's "average sample number" (ASN)
-        /* ballots = total ballots in the contest
-           vw = ballots cast for the winner of the pair
-           vl = ballots cast for the lower of the pair
+    function findAsn(ballots, vw, vl) {  
+        /* Returns Wald's "average sample number" (ASN) for a single pair of candidates.
+           The calculation takes into account ballots for neither (or both) candidates
+           
+           Input
+           ------ 
+           ballots : total ballots in the contest
+           vw : ballots cast for the winner of the pair
+           vl : ballots cast for the lower of the pair
+           
+           Returns
+           ------
+           Expected number of draws (not distinct ballots) required to confirm the 
+           outcome at the risk limit, on the assumption that the reported results are 
+           correct.
+           
         */
         try {
             risk = parsePercent($("#risk").val());
@@ -432,10 +444,12 @@
                 sw = vw/(vw+vl);
                 zw = Math.log(2.0*sw);
                 zl = Math.log(2.0*(1-sw));
-                pw = vw/ballots;
-                pl = vl/ballots;
+                nwl = vw+vl
+                pw = vw/nwl;
+                pl = vl/nwl;
+                p = nwl/ballots;
                 asn = Math.ceil(
-                     (Math.log(1.0/risk) + zw/2.0)/(((vw + vl)/ballots)*(pw*zw + pl*zl)));
+                     (Math.log(1.0/risk) + zw/2.0)/(p*(pw*zw + pl*zl)));
             } else {
                 asn = 'undefined';
             }
