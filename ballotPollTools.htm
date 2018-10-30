@@ -15,8 +15,8 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "5 August 2016 10:16 PDT";
-    // Copyright (c) 1997--2017 by P.B. Stark, statistics.berkeley.edu/~stark
+    pageModDate = "29 October 2018 11:51 PDT";
+    // Copyright (c) 1997--2018 by P.B. Stark, statistics.berkeley.edu/~stark
     // License CC-BY 2.0 https://creativecommons.org/licenses/by/2.0/
 // -->
 </script>
@@ -937,18 +937,23 @@ var manifest = null;
 
 <p><a href="#" class="toggleStartingSampleNotes">Show technical notes.</a></p>
 <p class="startingSampleNotes notes">
-   The initial sample size form implements this formula from
-   <a href="https://www.usenix.org/system/files/conference/evtwote12/evtwote12-final27.pdf">BRAVO</a>:
+   The initial sample size form implements this formula, adapted from
+   <a href="https://www.usenix.org/system/files/conference/evtwote12/evtwote12-final27.pdf">BRAVO</a> 
+   to account for ballots that do not show a vote for either candidate in a pair:
 </p>   
 <p class="startingSampleNotes notes">
    $$ 
-      \mbox{ASN}_{w,\ell} \approx \frac {\ln(1/\alpha) + \ln(2s_w)/2}{ p_w \ln(2s_w) + p_\ell \ln(2 - 2s_w)},
+      \mbox{ASN}_{w,\ell} \approx \frac{N}{N_{w\ell}}\frac{\ln(1/\alpha) + \ln(2s_w)/2}{ p_w \ln(2s_w) + p_\ell \ln(2 - 2s_w)},
    $$
 </p>
 <p class="startingSampleNotes notes">
-   where \(w\) is a candidate reported to have won, \(\ell\) is a candidate reported to have lost,
-   \(p_c\) is the fraction of votes for candidate \(c\) among all ballots,
-   including undervotes and invalid ballots, and
+   where \(w\) is a candidate reported to have won; \(\ell\) is a candidate reported to have lost;
+   \(N\) is the total number of ballots cast, including votes for all candidates, undervotes,
+   and overvotes;
+   \(N_{w\ell}\) is the total number of ballots with a vote for either \(w\) or \(\ell\) but not both;
+   \(p_c\) is the fraction of votes for candidate \(c\) among ballots that show a vote for either
+   \(w\) or \(\ell\) but not both;
+    and
 </p>
 <p class="startingSampleNotes notes">
    $$
