@@ -1,6 +1,17 @@
 
 //UTILITIES
 
+function getRandomSubarray(arr, size) {
+    var shuffled = arr.slice(0), i = arr.length, temp, index;
+    while (i--) {
+        index = Math.floor((i + 1) * Math.random());
+        temp = shuffled[index];
+        shuffled[index] = shuffled[i];
+        shuffled[i] = temp;
+    }
+    return shuffled.slice(0, size);
+}
+
 function vSum(arr) {
 	/**
 	Calculates the sum of elements in an array.
@@ -10,6 +21,14 @@ function vSum(arr) {
 	  sum += arr[i];
 	}
 	return sum;
+}
+
+function vMultiply(constant, arr) {
+    var return_arr = []
+    for (var i = 0; i < arr.length; i++) {
+	  return_arr.push(constant * arr[i]);
+	}
+	return return_arr;
 }
 
 function vLog(arr) {
@@ -74,99 +93,184 @@ function fisher_combined_pvalue(pvalues) {
 }
 
 
-
-
-
-function maximize_fisher_combined_pvalue(N, overall_margin, pvalue_funs, precise=true, plausible_lambda_range=null){
+function create_modulus(n1, n2, n_w2, n_l2, N1, V_wl, gamma) {
     /**
-    Find the smallest Fisher's combined statistic for p-values obtained 
-    by testing two null hypotheses at level alpha using data X=(X1, X2) 
+    Find the smallest Fisher's combined statistic for p-values obtained 	    The modulus of continuity for the Fisher's combined p-value.
+    by testing two null hypotheses at level alpha using data X=(X1, X2) 	    This function returns the modulus of continuity, as a function of
+    the distance between two lambda values.
 
+    n1 : int
+        sample size in the ballot comparison stratum
+    n2 : int
+        sample size in the ballot polling stratum
+    n_w2 : int
+        votes for the reported winner in the ballot polling sample
+    n_l2 : int
+        votes for the reported loser in the ballot polling sample
+    N1 : int
+        total number of votes in the ballot comparison stratum
+    V_wl : int
+        margin (in votes) between w and l in the whole contest
+    gamma : float
+        gamma from the ballot comparison audit
+    **/
+
+    var Wn = n_w2;
+    var Ln = n_l2;
+    var Un = n2-n_w2-n_l2
+
+    function return_func(delta) {
+
+        var return_arr = []
+
+        var arr1 = vMultiply(2*Wn, vLog(1 + V_wl*delta/2));
+        var arr2 = vMultiply(2*Ln, vLog(1 + V_wl*delta/2));
+        var arr3 = vMultiply(2*Un, vLog(1 + 2*V_wl*delta));
+        var arr4 = vMultiply(2*n1, vLog(1 + V_wl*delta/(2*N1*gamma)));
+
+        for (var i = 0; i < arr1.length; i++) {
+          return_arr[i] = arr1[i] + arr2[i] + arr3[i] + arr4[i];
+        }
+
+        return return_arr;
+
+
+    }
+
+    return return_func;
+
+}
+
+
+function maximize_fisher_combined_pvalue(N_w1, N_l1, N1, N_w2, N_l2, N2,
+    pvalue_funs, stepsize=0.05, modulus=None, alpha=0.05, feasible_lambda_range=None) {
+    /**
+    Grid search to find the maximum P-value.
+
+    Find the smallest Fisher's combined statistic for P-values obtained
+    by testing two null hypotheses at level alpha using data X=(X1, X2).
     Parameters
     ----------
-    N : array_like
-        Array of stratum sizes
-    overall_margin : int
-        the difference in votes for reported winner and loser in the population
+    N_w1 : int
+        votes for the reported winner in the ballot comparison stratum
+    N_l1 : int
+        votes for the reported loser in the ballot comparison stratum
+    N1 : int
+        total number of votes in the ballot comparison stratum
+    N_w2 : int
+        votes for the reported winner in the ballot polling stratum
+    N_l2 : int
+        votes for the reported loser in the ballot polling stratum
+    N2 : int
+        total number of votes in the ballot polling stratum
     pvalue_funs : array_like
         functions for computing p-values. The observed statistics/sample and known parameters should be
         plugged in already. The function should take the lambda allocation AS INPUT and output a p-value.
-    precise : bool
-        Optional, should we refine the maximum found by minimize_scalar? Default is True
-    plausible_lambda_range : array-like
-        lower and upper limits to search over lambda. Optional, but will speed up the search
-    
+    stepsize : float
+        size of the grid for searching over lambda. Default is 0.05
+    modulus : function
+        the modulus of continuity of the Fisher's combination function.
+        This should be created using `create_modulus`.
+        Optional (Default is None), but increases the precision of the grid search.
+    alpha : float
+        Risk limit. Default is 0.05.
+    feasible_lambda_range : array-like
+        lower and upper limits to search over lambda.
+        Optional, but a smaller interval will speed up the search.
+
     Returns
     -------
-    dict with 
-    
-    float
+    dict with
+
+    max_pvalue: float
         maximum combined p-value
-    float
+    min_chisq: float
         minimum value of Fisher's combined test statistic
-    float
-        lambda, the parameter that minimizes the Fisher's combined statistic/maximizes the combined p-value
+    allocation lambda : float
+        the parameter that minimizes the Fisher's combined statistic/maximizes the combined p-value
+    refined : bool
+        was the grid search refined after the first pass?
+    stepsize : float
+        the final grid step size used
+    tol : float
+        if refined is True, this is an upper bound on potential approximation error of min_chisq
     **/
 
-    //assert len(N)==2
-    //assert len(pvalue_funs)==2
+
 
     if (plausible_lambda_range == null) {
-    	lambda_upper = int(Math.min([2*N[0]/overall_margin, 1+2*N[1]/overall_margin])) + 1;
-    	lambda_lower = int(Math.max([-2*N[0]/overall_margin, 1-2*N[1]/overall_margin]));
+    	feasible_lambda_range = calculate_lambda_range(N_w1, N_l1, N1, N_w2, N_l2, N2)
     }
-    else {
-    	lambda_lower = plausible_lambda_range[0];
-    	lambda_upper = plausible_lambda_range[1];
-	}
 
-	fisher_pvalues = [];
-    cvr_pvalues = [];
-    test_lambdas = arange(lambda_lower, lambda_upper+1, 0.5); // fix
+    var lambda_lower = feasible_lambda_range[0];
+    var lambda_upper = feasible_lambda_range[1];
+
+    var test_lambdas = arange(lambda_lower, lambda_upper+stepsize, stepsize);
+    if test_lambdas.length < 5 {
+        stepsize = (lambda_upper + 1 - lambda_lower)/5;
+        test_lambdas = arange(lambda_lower, lambda_upper+stepsize, stepsize);
+    }
+
+
+	var fisher_pvalues = [];
     for (var lam of test_lambdas) {
-    	pvalue = Math.min([1, pvalue_funs[0](lam)]);
-    	if (pvalue1 < 0.01) {
-    		fisher_pvalues.push(0);
-    	} else {
-    		pvalue2 = Math.min([1, pvalue_funs[1](1-lam)]);
-    		fisher_pvalues.push(fisher_combined_pvalue([pvalue1,pvalue2]));
-    	}
+    	pvalue1 = Math.min([1, pvalue_funs[0](lam)]);
+    	pvalue2 = Math.min([1, pvalue_funs[1](1-lam)]);
+    	fisher_pvalues.push(fisher_combined_pvalue([pvalue1,pvalue2]));
     }
-    pvalue = Math.max(fisher_pvalues);
-    alloc_lambda = test_lambdas[argMax(fisher_pvalues)];
 
-    if (precise) {
-        fisher_pvalues = []
-        test_lambdas = arange(alloc_lambda-0.5, alloc_lambda+0.5, 0.1); //fix
-    	for (var lam of test_lambdas) {
-            pvalue1 = Math.min([1, pvalue_funs[0](lam)]);
-            pvalue2 = Math.min([1, pvalue_funs[1](1-lam)]);
-            fisher_pvalues.push(fisher_combined_pvalue([pvalue1, pvalue2]));
-     
-	        if (Math.max(fisher_pvalues) > pvalue) {
-	            pvalue = Math.max(fisher_pvalues);
-	            alloc_lambda = test_lambdas[argMax(fisher_pvalues)];
-	        }
-	    }
+    var pvalue = Math.max(fisher_pvalues);
+    var alloc_lambda = test_lambdas[argMax(fisher_pvalues)];
+
+
+    // If p-value is over the risk limit, then there's no need to refine the
+    // maximization. We have a lower bound on the maximum.
+    if (pvalue > alpha || modulus is null) {
+        return {'max_pvalue' : pvalue,
+                'min_chisq' : stat_functions.chi2Pdf(1 - pvalue, df=4),
+                'allocation lambda' : alloc_lambda,
+                'tol' : None,
+                'stepsize' : stepsize,
+                'refined' : False
+                }
     }
-    var dict = {
-    		'max_pvalue' : pvalue,
-            'min_chisq' : stat_functions.chi2Inv(p=1 - pvalue, df=4), // assuming chi2inv is the ppf?
-            'allocation lambda' : alloc_lambda
-            };
-    return dict;
+
+
+    // Use modulus of continuity for the Fisher combination function to check
+    // how close this is to the true max
+    var fisher_fun_obs = stat_functions.chi2Pdf(1-pvalue, df=4);
+    var fisher_fun_alpha = stat_functions.chi2Pdf(1-alpha, df=4);
+    var dist = Math.abs(fisher_fun_obs - fisher_fun_alpha)
+    var mod = modulus(stepsize)
+
+    if mod <= dist {
+        return {'max_pvalue' : pvalue,
+                'min_chisq' : fisher_fun_obs,
+                'allocation lambda' : alloc_lambda,
+                'stepsize' : stepsize,
+                'tol' : mod,
+                'refined' : False
+                }
+    } else {
+        var lambda_lower = alloc_lambda - 2*stepsize
+        var lambda_upper = alloc_lambda + 2*stepsize
+        var refined = maximize_fisher_combined_pvalue(N_w1, N_l1, N1, N_w2, N_l2, N2,
+            pvalue_funs, stepsize=stepsize/10, modulus=modulus, alpha=alpha,
+            feasible_lambda_range=(lambda_lower, lambda_upper))
+        refined['refined'] = True
+        return refined
+    }
+
 };
 
 function simulate_fisher_combined_audit(N_w1, N_l1, N1, N_w2, N_l2, N2, n1, n2, alpha,
     reps=10000, verbose=false, plausible_lambda_range=null) {
 
-    var margin = (N_w1+N_w2)-(N_l1+N_l2);
-    var N1 = N_w1+N_l1;
-    var N2 = N_w2+N_l2;
 
     var margin = (N_w1+N_w2)-(N_l1+N_l2);
     var N1 = N_w1+N_l1;
     var N2 = N_w2+N_l2;
+    var Vwl = (N_w1 + N_w2) - (N_l1 + N_l2)
     var pop2 = new Array(N2).fill(0);
 
 
@@ -174,9 +278,6 @@ function simulate_fisher_combined_audit(N_w1, N_l1, N1, N_w2, N_l2, N2, n1, n2, 
         pop2[i] = 1;
     };
 
-    for (var i = N_w2; i < N_w2 + N_l2; i++) {
-        pop2[i] = 0;
-    };
 
     for (var i = N_w2 + N_l2; i < N2; i++) {
         pop2[i] = NaN;
@@ -191,34 +292,37 @@ function simulate_fisher_combined_audit(N_w1, N_l1, N1, N_w2, N_l2, N2, n1, n2, 
     var fisher_pvalues = new Array(reps).fill(0);
 
 
-    function getRandomSubarray(arr, size) {
-        var shuffled = arr.slice(0), i = arr.length, temp, index;
-        while (i--) {
-            index = Math.floor((i + 1) * Math.random());
-            temp = shuffled[index];
-            shuffled[index] = shuffled[i];
-            shuffled[i] = temp;
-        }
-        return shuffled.slice(0, size);
-    }
+
 
     for (var i = 0; i < reps; i++) {
         if (verbose) {
             console.log(i)
         }
 
-        var sam = getRandomSubarray(pop2, n2)
+        var sam = getRandomSubarray(pop2, n2);
+        var nw2 = 0;
+        var nl2 = 0;
+        for (var i = 0; i < sam.length; i++ ){
+            if (sam[i] == 1) {
+                nw2 += 1;
+            } else if (sam[i] == 1) {
+                nl2 += 1;
+            }
+        };
+        var mod = create_modulus(n1, n2, nw2, nl2, N1, Vwl, 1.03905)
+
 
         function nocvr_pvalue(alloc) {
-            return ballot_polling_sprt(sample=sam, popsize=N2, alpha=alpha, Vw=N_w2, Vl=N_l2, null_margin=(N_w2-N_l2) - alloc*margin)['pvalue']
+            return ballot_polling_sprt(sam, N2, alpha, N_w2, N_l2, (N_w2-N_l2) - alloc*margin)['pvalue']
         };
 
-        fisher_pvalues[i] = maximize_fisher_combined_pvalue(N=(N1, N2),
-                               overall_margin=margin,
-                               pvalue_funs=[cvr_pvalue, nocvr_pvalue],
-                               precise=true,
-                               plausible_lambda_range=plausible_lambda_range)['max_pvalue']
-    }
+        fisher_pvalues[i] = maximize_fisher_combined_pvalue(N_w1, N_l1,
+                               N1, N_w2, N_l2, N2,
+                               [cvr_pvalue, nocvr_pvalue],
+                               mod,
+                               plausible_lambda_range)['max_pvalue']
+    };
+
     var sum = 0;
 
     for(var i = 0; i < fisher_pvalues.length; i++ ){
