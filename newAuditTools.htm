@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html lang="en"  lang="en"  xmlns="http://www.w3.org/1999/xhtml"
 	  xmlns:pref="http://www.w3.org/2002/Math/preference"
@@ -247,11 +247,14 @@
 		    var candRefLast = '.candidate.contest' + candidates.length + ':last';
         // selects the last element of candidate.contest[number] class
 		    var thisContest = candidates.length-1;
+        var contestNum = (candidates.length).toString();
 		    $("#contestName" + conStr).blur(function(){names[conStr][0] = this.value;});
 		    $("#addCandidateButton" + conStr).click(function(){$(conRef).append(addCandidate(conStr));updateVotes();});
 		    $("#removeCandidateButton" + conStr).click(function(){$(candRefLast).remove();
 		                                                          candidates[thisContest].pop();
 		                                                          names[thisContest].pop();
+                                                              candNum = (Object.keys(votesDict[contestNum]).length).toString();
+                                                              delete votesDict[contestNum][candNum];
 		                                                          updateVotes();}
 		                                              );
 		    return(true);
@@ -289,11 +292,11 @@
 
           '<td><input type="text" size="20" value=0 id="nBallots1' + theCandidate + '"' +  
             'onblur=' + 
-          'sumStratum("nBallots1' + theCandidate + '"' + ',"nBallots2' + theCandidate + '"' + ',"answer' + theCandidate + '")' + '></td>' + 
+          'sumStratum("nBallots1' + theCandidate + '"' + ',"nBallots2' + theCandidate + '"' + ',"answer' + theCandidate + '",' + '"' + theCandidate + '")' + '></td>' + 
           
           '<td><input type="text" size="20" value=0 id="nBallots2' + theCandidate + '"' +  
             'onblur=' + 
-          'sumStratum("nBallots1' + theCandidate + '"' + ',"nBallots2' + theCandidate + '"' + ',"answer' + theCandidate + '")' + '></td>' +
+          'sumStratum("nBallots1' + theCandidate + '"' + ',"nBallots2' + theCandidate + '"' + ',"answer' + theCandidate + '",' + '"' + theCandidate + '")' + '></td>' +
 
           '<td><input type="text" size="20" value=0 id="answer' + theCandidate + '"' +  'readonly="readonly" /></td>\
           </tr>'
@@ -301,13 +304,20 @@
 
 		}
 
-
-  function sumStratum(id1, id2, id3) {
+  votesDict = {};
+  function sumStratum(id1, id2, id3, theCandidate) {
       var n1 = parseInt(document.getElementById(id1).value);
       var n2 = parseInt(document.getElementById(id2).value);
       var n3 = n1 + n2;
       var ans = document.getElementById(id3);
       ans.value = n3
+      contestNum = theCandidate.split("_")[0];
+      candNum = theCandidate.split("_")[1];
+
+      if (!(contestNum in votesDict)) {
+        votesDict[contestNum] = {};
+      }
+      votesDict[contestNum][candNum] = [n1, n2, n3];
     }
 
 	function addBallot() {
@@ -359,7 +369,7 @@
 		function hashMe() {
 			hasher = new jsSHA($("#seedValue").val() + "," +
 			                   $("#samNum").val(), "ASCII");
-			$("#nObj").val(parseInt($("#nObj").val()));
+			$("#nObj").val(parseManifestt($("#nObj").val()));
 			if ($("#nObj").val() == 'NaN') {
 			    $("#nObj").val(1);
 			}
@@ -485,8 +495,8 @@
 
     function findMinMargin() {
         ballots = parseInt($("#nBallots").val());
-        if (candidates.length > 0) {
-               minMargin = ballots;
+        if (Object.keys(votesDict).length > 0) {
+            minMargin = ballots; // min margin starts as the total number of ballots
         } else {
             minMargin = Number.NaN;
         }
@@ -494,27 +504,25 @@
         var opsOk = true;
         var votesOk = true;
         try {
-            for (var i=0; i < candidates.length; i++) {
-               var cani = parseInt($("#voteForContest" + i.toString()).val());
-               if (candidates[i].length < cani ) {
+            for (var contestNum in votesDict) {
+              var cani = parseInt($("#voteForContest" + (contestNum - 1).toString()).val());
+              if (votesDict.length < cani) {
                    opsOk = false;
-               }
-               for (var j=0; j < candidates[i].length; j++) {
-                   candidates[i][j] = parseInt($("#nBallots" + (i+1).toString() + '_' + (j+1).toString()).val());
-               }
-               if (vSum(candidates[i]) > cani*ballots) {
-                   votesOk = false;
-               }
-               var dum = candidates[i].slice().sort(numberLessThan).reverse();
-               minMargin = Math.min(minMargin, dum[cani-1] - dum[cani]);
-               for (var j=0; j < candidates[i].length; j++) {
-                   var theCandidate = (i+1).toString() + '_' + (j+1).toString();
-                   if (candidates[i][j] > dum[cani]) {
+              }
+              totalVoteCounts = [];
+              for (var candNum in votesDict[contestNum]) {
+                totalVoteCounts.push(votesDict[contestNum][candNum][2]);
+              }
+              totalVoteCounts.sort(numberLessThan).reverse();
+              minMargin = Math.min(minMargin, totalVoteCounts[cani-1] - totalVoteCounts[cani]);
+              for (var candNum in votesDict[contestNum]) {
+                   var theCandidate = (contestNum).toString() + '_' + (candNum).toString();
+                   if (votesDict[contestNum][candNum][2] > totalVoteCounts[cani]) {
                         $("#candidate_" + theCandidate).css('backgroundColor', '#5e5');
                    } else {
                         $("#candidate_" + theCandidate).css('backgroundColor', '');
                    }
-               }
+              }
             }
         } catch(e) {
            minMargin = 'undefined';
@@ -1789,6 +1797,19 @@ Provisional precinct 3, (995 999)
    including the method of rounding the expected number of differences of each
    type.
 </p>
+
+
+
+
+<form action="#" method="get">
+        <fieldset>
+            <legend>Audit progress</legend>
+              <div class="testTable"></div>
+        </fieldset>
+
+</form>
+
+
 
 
 <p>
