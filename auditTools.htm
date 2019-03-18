@@ -12,8 +12,8 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "23 September 2017 11:54 PDT";
-    // Copyright (c) 1997--2017 by P.B. Stark, statistics.berkeley.edu/~stark
+    pageModDate = "18 March 2019 11:54 PDT";
+    // Copyright (c) 1997--2019 by P.B. Stark, statistics.berkeley.edu/~stark
     // License CC-BY 2.0 https://creativecommons.org/licenses/by/2.0/
 // -->
 </script>
@@ -518,12 +518,17 @@
                for (var i=0; i < candidates.length; i++) {
                    var vf = parseInt($("#voteForContest" + i.toString()).val());
                    if (candidates[i].length <  vf ) {
+                       $("#voteForContest" + i.toString()).val("1");
+                       $("#voteForContest" + i.toString()).focus();
                        throw 'Fewer candidates than voting opportunities in contest ' + (i+1).toString() + '!';
                    }
                    if (vSum(candidates[i]) > vf*ballots) {
+                       $("#nBallots").val('');
+                       $("#nBallots").focus();
                        throw 'More votes than voting opportunities in contest ' + (i+1).toString() + '!';
                    }
                    if (isNaN(parseInt($("#nBallots").val()))) {
+                       $("#nBallots").focus();
                        throw 'Total number of ballots must be specified!';
                    }
                }
