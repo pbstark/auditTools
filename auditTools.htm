@@ -12,10 +12,18 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "26 February 2020 15:45 PDT";
+    pageModDate = "7 June 2020 15:45 PDT";
     // Copyright (c) 1997--2020 by P.B. Stark, statistics.berkeley.edu/~stark
     // License CC-BY 2.0 https://creativecommons.org/licenses/by/2.0/
 // -->
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
 </script>
 
 <script type="text/javascript" src="../../Java/Jquery/Current/jquery.min.js"></script>
@@ -34,14 +42,26 @@
       // Starting sample size notes
       $("a.toggleStartingSampleNotes").click(function(){
                                                          $(".startingSampleNotes").toggle();
-                                                         if ($("a.toggleStartingSampleNotes").text() == 'Show technical notes.') {
-                                                             $("a.toggleStartingSampleNotes").text('Hide technical notes.');
+                                                         if ($("a.toggleStartingSampleNotes").text() == 'Show starting sample size technical notes.') {
+                                                             $("a.toggleStartingSampleNotes").text('Hide starting sample size technical notes.');
                                                          } else {
-                                                             $("a.toggleStartingSampleNotes").text('Show technical notes.');
+                                                             $("a.toggleStartingSampleNotes").text('Show starting sample size technical notes.');
                                                          }
                                                          return(false);
                                                         }
                                             );
+      // Super-majority notes
+      $("a.toggleSupermajorityNotes").click(function(){
+                                                         $(".supermajorityNotes").toggle();
+                                                         if ($("a.toggleSupermajorityNotes").text() == 'Show explanation of auditing supermajority contests.') {
+                                                             $("a.toggleSupermajorityNotes").text('Hide explanation of auditing supermajority contests.');
+                                                         } else {
+                                                             $("a.toggleSupermajorityNotes").text('Show explanation of auditing supermajority contests.');
+                                                         }
+                                                         return(false);
+                                                        }
+                                            );
+      
       // Ending sample size notes
       $("a.toggleEndingSampleNotes").click(function(){
                                                          $(".endingSampleNotes").toggle();
@@ -121,6 +141,7 @@
     var maxMar = 30;
     var data = new Array();
     var fhcText = 'full hand count expected';
+    var hasSuperMajority = false;
 
     function plotSample() {
         if ($("#byMargin").prop('checked')) {
@@ -216,7 +237,15 @@
 		              '.&nbsp;&nbsp;</span>' +
 		              '<label for="contestName' + conStr + '">Contest name: </label>' +
 		              '<input type="text" size="80" id="contestName' + conStr + '" class="contestName" /><br />' +
-		              '<label for="voteForContest' + conStr +  '">Winners:&nbsp;</label>' +
+		              '<div id="socialChoiceFun' + conStr + '">'+
+		              '<label for="socialChoiceFun' + conStr + '">Contest type: </label>' +
+		              '<input type="radio" id="socialChoiceFun' + conStr + 'plurality" name="socialChoiceFun' + 
+		              conStr + '" value="plurality" checked />' +
+		              '<label for="socialChoiceFun' + conStr + 'plurality">plurality</label>' +
+		              '<input type="radio" id="socialChoiceFun' + conStr + 'supermajority" name="socialChoiceFun' + 
+		              conStr + '" value="supermajority"/>' +
+		              '<label for="socialChoiceFun' + conStr + 'supermajority">super-majority</label></div>' +
+		              '<p id="voteForContest' + conStr + 'disp"><label for="voteForContest' + conStr +  '">Winners:&nbsp;</label>' +
 		              '<select id="voteForContest' + conStr + '" onchange="updateVotes();">' +
 		                 '<option value="1">1</option>' +
 		                 '<option value="2">2</option>' +
@@ -228,7 +257,10 @@
 		                 '<option value="8">8</option>' +
 		                 '<option value="9">9</option>' +
 		                 '<option value="10">10</option>' +
-		              '</select><p><span class="label">Reported votes:</span></p></div><br />' +
+		              '</select></p><p id="shareToWin' + conStr + 'disp">' +
+		              '<label for="shareToWin' + conStr + '">Share to win (e.g., 0.5, 50%, 0.6667, 66.67%):</label>' +
+		              '<input type="text" size="10" id="shareToWin' + conStr + '" class="shareToWin" value="50%" onchange="updateVotes();"/>' +
+		              '</p><p><span class="label">Reported votes:</span></p></div><br />' +
 		              '<div class="addCandidate" id="addCandidate' + conStr + '" contest="' + conStr + '">' +
 		              '<input type="button" id="addCandidateButton' + conStr +
 		              '" value="Add candidate to contest ' + candidates.length.toString() +
@@ -247,8 +279,32 @@
 		    $("#removeCandidateButton" + conStr).click(function(){$(candRefLast).remove();
 		                                                          candidates[thisContest].pop();
 		                                                          names[thisContest].pop();
-		                                                          updateVotes();}
-		                                              );
+		                                                          updateVotes();});
+		    $("#shareToWin" + conStr + "disp").hide();
+		    $("#socialChoiceFun" + conStr + " input[type=radio]").change(function(){
+                    if ($(this).val()  == "supermajority") { //  hide plurality voteFor and show share to win
+                        $("#voteForContest" + conStr + "disp").hide(); 
+		                $("#shareToWin" + conStr + "disp").show();
+		                $("#voteForContest" + conStr + 'option[value="1"]').prop('selected', true); // only f>= 1/2 for now
+		                if (candidates[thisContest].length > 2) {
+		                    alert("Super-majority only allows 2 candidates");
+		                    while(candidates[thisContest].length > 2) {
+		                        $("#removeCandidateButton" + conStr).click();
+		                    }
+		                }
+		            } else {  //  show plurality voteFor and hide share to win
+		                $("#voteForContest" + conStr + "disp").show(); 
+		                $("#shareToWin" + conStr + "disp").hide();
+		            }
+		            updateVotes();		            
+		     });
+		     $("#shareToWin" + conStr).blur(function(){
+		         var share = parsePercent($(this).val());
+		         if (share <= 0 || share >= 1) {
+		             alert("vote share must be between 0 and 100%");
+		         }
+		         updateVotes();
+		     });
 		    return(true);
 		}
 
@@ -263,33 +319,38 @@
 		    return(true);
 		}
 
-
 		function addCandidate(contest) {
-            candidates[contest].push(0);
-		    var theCandidate = (parseInt(contest)+1).toString() + '_' + candidates[contest].length.toString();
-		    return('<div class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
-		           'id="candidate_' +  theCandidate + '">' +
-		           '<label for="name' + theCandidate + '">Candidate ' + candidates[contest].length +  ' Name: </label> ' +
-		           '<input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
-		              (candidates[contest].length-1) + ']=this.value;" />' +
-		           '<label for="nBallots' + theCandidate + '">&nbsp;&nbsp;Votes: ' + '</label>' +
-		           '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>');
+		    scf = $("#socialChoiceFun" + contest.toString() + " input[type=radio]:checked").val();
+		    if (scf == "plurality" || candidates[contest].length < 2) {
+				candidates[contest].push(0);
+				var theCandidate = (parseInt(contest)+1).toString() + '_' + candidates[contest].length.toString();
+				return('<div class="candidate contest' + (parseInt(contest)+1).toString() + '" ' +
+					   'id="candidate_' +  theCandidate + '">' +
+					   '<label for="name' + theCandidate + '">Candidate ' + candidates[contest].length +  ' Name: </label> ' +
+					   '<input type="text" size="40" id="name' + theCandidate + '" onblur="names[' + contest + '][' +
+						  (candidates[contest].length-1) + ']=this.value;" />' +
+					   '<label for="nBallots' + theCandidate + '">&nbsp;&nbsp;Votes: ' + '</label>' +
+					   '<input type="text" size="10" id="nBallots' + theCandidate + '" onblur="updateVotes()"/></div>');
+		    } else {
+		        alert("Only two candidates are allowed with supermajority.");
+		        return("");
+		    }
 		}
 
 	function addBallot() {
 		    ballots.push([]);
 		    var balStr = (ballots.length-1).toString();
 		    var str = '<hr align="left" id="hrBal' + balStr + '"><div class="ballot" id="ballot' + balStr + '" ballot="' + balStr + '">' +
-		              '<span class="label">Ballot ' + ballots.length.toString() +
+		              '<span class="label">Ballot card ' + ballots.length.toString() +
 		              '.&nbsp;&nbsp;</span>' +
-		              '<p><span class="label">Contests on ballot ' + ballots.length.toString() +
+		              '<p><span class="label">Contests on ballot card ' + ballots.length.toString() +
 		                 ' with differences:</span></p></div><br />' +
 		              '<div class="addErrContest" id="addErrContest' + balStr + '" ballot="' + balStr + '">' +
 		              '<input type="button" id="addErrContestButton' + balStr +
-		              '" value="Add discrepant contest to ballot ' + ballots.length.toString() +
+		              '" value="Add discrepant contest to ballot card ' + ballots.length.toString() +
 		              '" ballot="' + balStr + '"/>' +
 		              '<input type="button" id="removeErrContestButton' + balStr +
-		                  '" value="Remove last contest from ballot ' + ballots.length.toString() +
+		                  '" value="Remove last contest from ballot card ' + ballots.length.toString() +
 		                  '" ballot="' + balStr + '"/></div>';
 		    $("#ballotErrList").append(str);
 		    var balRef = '#ballot' + balStr;
@@ -451,6 +512,7 @@
 
     function findMinMargin() {
         ballots = parseInt($("#nBallots").val());
+        hasSuperMajority = false;
         if (candidates.length > 0) {
                minMargin = ballots;
         } else {
@@ -462,6 +524,8 @@
         try {
             for (var i=0; i < candidates.length; i++) {
                var cani = parseInt($("#voteForContest" + i.toString()).val());
+               var superMajorityi = $("#socialChoiceFun" + i.toString() + "supermajority").is(':checked');
+               var shareToWini = parsePercent($("#shareToWin" + i.toString()).val());
                if (candidates[i].length < cani ) {
                    opsOk = false;
                }
@@ -472,15 +536,32 @@
                    votesOk = false;
                }
                var dum = candidates[i].slice().sort(numberLessThan).reverse();
-               minMargin = Math.min(minMargin, dum[cani-1] - dum[cani]);
-               for (var j=0; j < candidates[i].length; j++) {
-                   var theCandidate = (i+1).toString() + '_' + (j+1).toString();
-                   if (candidates[i][j] > dum[cani]) {
-                        $("#candidate_" + theCandidate).css('backgroundColor', '#5e5');
+               var thisMargin;
+               if (superMajorityi) {
+                   hasSuperMajority = true;
+                   if (candidates[i][0] >= shareToWini*(candidates[i][0] + candidates[i][1])) {
+                       $("#candidate_" + (i+1).toString() + '_' + '1').css('backgroundColor', '#5e5');
+                       $("#candidate_" + (i+1).toString() + '_' + '2').css('backgroundColor', '');
+                   } else if (candidates[i][0] < shareToWini*(candidates[i][0] + candidates[i][1])) {
+                       $("#candidate_" + (i+1).toString() + '_' + '1').css('backgroundColor', '');
+                       $("#candidate_" + (i+1).toString() + '_' + '2').css('backgroundColor', '#5e5');
                    } else {
-                        $("#candidate_" + theCandidate).css('backgroundColor', '');
+                       $("#candidate_" + (i+1).toString() + '_' + '1').css('backgroundColor', '');
+                       $("#candidate_" + (i+1).toString() + '_' + '2').css('backgroundColor', '');
+                   }           
+                   thisMargin = Math.abs(2*((1-shareToWini)*candidates[i][0]-shareToWini*candidates[i][1]));
+               } else {
+                   thisMargin = dum[cani-1] - dum[cani];
+	               for (var j=0; j < candidates[i].length; j++) {
+                       var theCandidate = (i+1).toString() + '_' + (j+1).toString();
+                       if (candidates[i][j] > dum[cani]) {
+                           $("#candidate_" + theCandidate).css('backgroundColor', '#5e5');
+                       } else {
+                           $("#candidate_" + theCandidate).css('backgroundColor', '');
+                       }
                    }
                }
+               minMargin = Math.min(minMargin, thisMargin);
             }
         } catch(e) {
            minMargin = 'undefined';
@@ -491,7 +572,11 @@
             $("#theDilutedMargin").text('Diluted margin: undefined.');
             $("#theMargin").text('Smallest margin (votes): undefined. ');
         } else {
-            $("#theMargin").text('Smallest margin (votes): ' + commify(minMargin) + '. ');
+            if (hasSuperMajority) {
+            	$("#theMargin").text('Smallest margin (votes, adjusted for supermajority): ' + commify(minMargin) + '. ');
+            } else {
+                $("#theMargin").text('Smallest margin (votes): ' + commify(minMargin) + '. ');
+            }
             $("#theDilutedMargin").text(' Diluted margin: ' + commify(doubleToStr(100*minMargin/ballots,2)) + '%. ');
         }
         return(opsOk & votesOk & ballOk);
@@ -640,10 +725,10 @@
                       ' is not equal to the number of ballots in the contest, ' + $("#nObj").val() +'!');
                 return(Number.NaN);
             } else if (vMinMax(whichBallots)[1] > vSum(manifest[1])) {
-                alert('Error: Requested ballot exceeds the number of ballots in the manifest!');
+                alert('Error: Requested ballot card exceeds the number of ballot cards in the manifest!');
                 return(Number.NaN);
             } else if (vMinMax(whichBallots)[0] < 1) {
-                alert('Error: Requested ballot number is negative!');
+                alert('Error: Requested ballot card number is negative!');
                 return(Number.NaN);
             }
             var manCum = new Array(manifest[0].length);  // cumulative number of ballots in batches
@@ -676,7 +761,7 @@
         } else {
             str = 'The manifest cannot be parsed.\n' +
                   'Be sure that the each line of the manifest consists of a batch label followed by a comma and a number or ' +
-                  'a colon-separated ballot range or a list of identifiers in parentheses. ' +
+                  'a colon-separated ballot card range or a list of identifiers in parentheses. ' +
                   'There must be exactly one comma per line.\n';
             $("#manifest").val(str + $("#manifest").val());
         }
@@ -690,8 +775,8 @@ var manifest = null;
         var grabBagRegExp = /^ *\(.+\) *$/i
         var batches = new Array(3);
         batches[0] = new Array();  // batch labels
-        batches[1] = new Array();  // number of ballots in the batch
-        batches[2] = new Array();  // number of the first ballot in the batch, or an array of identifiers
+        batches[1] = new Array();  // number of ballot cards in the batch
+        batches[2] = new Array();  // number of the first ballot card in the batch, or an array of identifiers
         success = true;
         var j = 0;
         for (var i=0; i < stuff.length; i++) {
@@ -707,7 +792,7 @@ var manifest = null;
                    alert('Error! Line ' + (i+1).toString() + ' of the manifest does not parse: ' +
                          stuff[i].toString() +
                          ' Be sure it has exactly one comma, separating the label from the number ' +
-                         'of ballots or the ballot range.' );
+                         'of ballot cards or the ballot card range.' );
                    success = false;
                } else {
                    batches[0][j] = dum[0];
@@ -925,6 +1010,9 @@ var manifest = null;
    This page implements some tools to conduct &quot;comparison&quot; risk-limiting audits as described in
    <a href="http://statistics.berkeley.edu/~stark/Preprints/gentle12.pdf">A Gentle Introduction to
    Risk-Limiting Audits</a> (AGI), by Lindeman and Stark.
+   It also extends the ballot-level comparison audit method in that paper to
+   cover super-majority contests, such as ballot measures that require at least 2/3 of the valid votes
+   to pass.
    For an implementation of tools for &quot;ballot-polling&quot; risk-limiting audits as described in AGI, see
    <a href="./ballotPollTools.htm">http://statistics.berkeley.edu/~stark/Vote/ballotPollTools.htm</a>.
 </p>
@@ -934,13 +1022,27 @@ var manifest = null;
 </p>
 
 <p>
-   A <em>risk-limiting audit</em> is a procedure that is guaranteed to have a large chance
+   A <em>risk-limiting audit</em> (RLA) is a procedure that is guaranteed to have a large chance
    of progressing to a full hand count of the votes if the electoral outcome is wrong.
    The outcome according to the hand count then replaces the outcome being audited.
    The <em>risk limit</em> is the maximum chance that the audit will not progress
    to a full hand count if the electoral outcome is incorrect, no matter why it is
    incorrect&mdash;whether because of voter error, bugs, pollworker error, or
    deliberate fraud&mdash;provided the audit trail is complete and accurate.
+</p>
+
+<p>
+   The trustworthiness of the paper trail is essential:
+   applying RLA procedures to an untrustworthy paper trail cannot ensure that
+   incorrect electoral outcomes will be corrected, and can in fact turn
+   a correct reported outcome into an incorrect outcome.
+   A <em>compliance audit</em> to establish whether the paper trail is trustworthy
+   is required.
+   Generally, applying RLA procedures to the printout of ballot-marking devices
+   cannot check whether reported election outcomes are correct or correct wrong
+   outcomes, and thus cannot limit the risk that an RLA is supposed to limit.
+   (Nonetheless, there is value in using RLA procedures to check whether tabulation errors were large
+   enough to alter reported outcomes.)
 </p>
 
 <p>
@@ -962,41 +1064,55 @@ var manifest = null;
 <p>
   The difference can be neutral, an <em>understatement</em>, or
   an <em>overstatement</em>, depending on the effect of changing the
-  voting system interpretation of the ballot to match the hand interpretation:
+  voting system interpretation of the ballot card to match the hand interpretation.
+  Understatements make the margin of victory appear smaller than
+  it really was; overstatements make the margin of victory appear
+  larger than it really was.
+</p>
+
+<p>
   Consider the <em>pairwise margin</em> between each winner and each loser in a contest.
   For instance, a city council election might involve voting for three candidates
   from a pool of ten, to fill three seats on the council.
-  Then each of the three winners can be paired with each of the seven losers,
+  Then each of the three reported winners can be paired with each of the seven reported losers,
   giving twenty-one pairwise margins in that contest.
-  If changing the interpretation of a ballot according to the voting system to make it match
-  the human interpretation of the ballot would widen <em>every</em> pairwise margin in
+  If changing the interpretation of a ballot card according to the voting system to make it match
+  the human interpretation of the ballot card would widen <em>every</em> pairwise margin in
   <em>every</em> contest
-  under audit, that ballot has
+  under audit, that ballot card has
   an <em>understatement</em>.
   Understatements do not call the outcome into question.
   If changing the interpretation according to the voting system to match
   the human interpretation would narrow <em>any</em> pairwise margin in <em>any</em> contest
   under audit, the ballot
   has an <em>overstatement</em>.
-  If enough ballots have overstatements, the outcome could be wrong.
+  If enough ballot cards have overstatements, the outcome could be wrong.
+</p>
+
+<p>
+   Quantifying understatements and overstatements is slightly different for
+   plurality contests and super-majority contests;
+   see below.
 </p>
 
 
 <p>
    The sample size calculations for this method depend on the risk limit as well as
    the <em>diluted margin</em>, which is the margin in votes divided by the
-   number of ballots cast in any of the contests being audited together, including undervotes and overvotes.
+   number of ballot cards cast in any of the contests being audited together, including undervotes and overvotes
+   and cards that do not contain the contest.
    Undervotes and overvotes are included because they might have been intended as
    votes for candidates, misinterpreted by the voting system as undervotes or overvotes.
-   Because the
+   Similarly, the voting system might report that a card contains the contest when
+   it does not, and vice versa.
 </p>
 
 <p>
-   Efficient risk-limiting audits generally count votes by hand until there is convincing
+   Efficient risk-limiting audits generally inspect ballot cards by hand until there is convincing
    evidence that the outcome according to a full hand count would agree
-   with the outcome under audit.
+   with the outcome for the contests under audit.
    If convincing evidence is not forthcoming, the audit progresses to a full hand count, which
-   is used to correct the outcome under audit if the two disagree.
+   is used to correct the outcomes under audit if the hand count shows they are incorrect.
 </p>
 
 <p>
@@ -1017,7 +1133,8 @@ var manifest = null;
 <p>
    The ultimate sample size required to confirm the outcome
    depends on the diluted margin and the number of errors (both understatements
-   and overstatements) found in the sample,
+   and overstatements) found in the sample, the social choice function
+   (plurality or supermajority),
    as well as the risk limit.
    The following graph plots the sample size as a function of the number of 1-vote
    overstatement errors the audit finds, for diluted margins of 0.5%, 1%, 5%, 10%, and 20%, all at
@@ -1030,15 +1147,9 @@ var manifest = null;
 <h3 id="plotTitle">Expected sample size as a function of the diluted margin, 5% risk limit</h3>
 <div id="placeholder" style="width:800px;height:400px"></div>
 <p>
-   <input type="checkbox" name="byMargin" id="byMargin" value="byMargin"  />Plot final sample size as a function of observed 1-vote overstatements
+   <input type="checkbox" name="byMargin" id="byMargin" value="byMargin"  />Plot 
+   final sample size as a function of observed 1-vote overstatements
 </p>
-
-<!--
-    <p id="hoverdata">Mouse hovers at
-    (<span id="x">0</span>, <span id="y">0</span>). <span id="clickdata"></span></p>
--->
-
-
 
 
 <h2>Initial sample size</h2>
@@ -1046,23 +1157,33 @@ var manifest = null;
 <p>
    The initial sample size tool lets you enter the particulars of the contest(s) to be
    audited as a group:
-   the total ballots cast across all the contests combined, and the vote totals for each
+   the total ballot cards cast across all the contests combined, and the vote totals for each
    candidate in each contest.
    The form helps you anticipate the number of randomly selected
    ballots that will need to be compared to
    their CVRs to attain a given limit on the risk, under assumptions about the
    rates of differences anticipated.
-   It is completely legitimate to sample one at a time and check whether enough have been
+   It is completely legitimate to sample one ballot card at a time and check whether enough have been
    sampled using the &quot;stopping sample size tool,&quot; (later in this page) but this
    form can help auditors anticipate how much work will be required
-   and retrieve ballots more efficiently, by reducing the number of times a given batch of
+   and retrieve ballot cards more efficiently, by reducing the number of times a given batch of
    ballots is opened.
 </p>
 
 <p>
-   Enter the total number of ballots cast in all contests to be audited.
+   Enter the total number of ballot cards cast in all contests to be audited.
    Add candidates and contests as necessary until the results from all contests have been
    entered.
+   Indicate whether the contest is plurality or supermajority.
+   For plurality contests, select the number of winners, e.g., 1 for a first-past-the-post contest.
+   For supermajority contests, input the percentage of votes required to win, e.g., 50%
+   or 66.667% (include the percent sign).
+   This tool allows at most two candidates in supermajority contests, i.e., &quot;yes&quot;
+   and &quot;no.&quot; The candidate listed first is assumed to be the candidate that
+   requires the supermajority.
+   For instance, to audit a ballot measure that requires a 2/3 majority to pass,
+   list &quot;yes&quot; as the first candidate and &quot;no&quot; as the
+   second candidate.
    Enter the desired risk limit and the expected rates of one-vote and two-vote differences.
    Select whether to round up the expected number of differences of each type.
    Finally, click &quot;calculate&quot; to find the starting sample size.
@@ -1076,7 +1197,7 @@ var manifest = null;
 			<div>
 				<fieldset>
 				   <legend>Contest information</legend>
-				       <label for="nBallots">Ballots cast in all contests:</label>
+				       <label for="nBallots">Ballot cards cast in all contests:</label>
                        <input type="text" size="10" name="nBallots" id="nBallots"
 			                  onblur="$('#nObj').val(this.value);updateVotes();"/>&nbsp;&nbsp;
 			           <span class="label" id="theMargin">Smallest margin (votes): undefined. </span>
@@ -1136,25 +1257,33 @@ var manifest = null;
 <h3 id="considerations">Considerations for deciding which contests to audit together</h3>
 
 <p>
-   The number of ballots the audit must examine before stopping depends on the smallest
+   The number of ballot cards the audit must retrieve and inspect before stopping depends on the smallest
    diluted margin among the contests to be audited together (as well as the risk limit,
    the errors the audit finds, and so on).
-   All else equal, the larger the diluted margin is, the smaller the sample size needs to be.
+   All else equal, the larger the diluted margin, the smaller the sample size&mdash;when the reported
+   outcome is correct.
 </p>
 
 <p>
    Because the diluted margin is the smallest margin in votes divided by the total number of
-   ballots cast in all the contests under audit,
-   auditing small contests together with large contests can be inefficient:
-   Dividing the vote margin in small contests by the number of ballots cast in large contests
+   ballot cards cast in all the contests simultaneously under audit,
+   auditing small contests together with large contests can be inefficient if the ballot cards
+   containing those contests can be segregated from each other:
+   Dividing the vote margin in small contests by the number of ballot cards cast in large contests
    can make the diluted margin very small, which makes the required sample very large.
+   If a jurisdiction organizes ballots by ballot style (e.g., through precinct-based voting
+   or by sorting vote by mail ballots before scanning), it can substantially reduce
+   the work of auditing multiple contests and small contests.
 </p>
 
 <p>
    Generally, if two contests overlap substantially&mdash;for instance, if both are jurisdiction-wide
    contests&mdash;it is more economical
-   to audit them together:  Fewer ballots will need to be inspected in all.
-   Conversely, if two contests do not overlap at all, it is more efficient to audit them separately.
+   to audit them together:  Fewer ballot cards will need to be manually inspected in all.
+   Conversely, if two contests do not overlap at all, it is more efficient to audit them separately,
+   if the ballots are organized physically by ballot style.
+   The use of vote centers tends to make it harder to audit efficiently, unless the
+   ballots or ballot cards are sorted before scanning.
 </p>
 
 
@@ -1175,31 +1304,32 @@ var manifest = null;
    together is greater than the sum of the required starting sample sizes when they are audited
    separately.
    (If you experiment with different groupings of contests, be sure to change the entry for
-   &quot;Ballots cast in all contests&quot; to reflect only the contests that are to be audited
+   &quot;Ballot cards cast in all contests&quot; to reflect only the contests that are to be audited
    together.)
 </p>
 
 
 
-<p><a href="#" class="toggleStartingSampleNotes">Show technical notes.</a></p>
+<p><a href="#" class="toggleStartingSampleNotes">Show starting sample size technical notes.</a></p>
 <p class="startingSampleNotes notes">
-   The initial sample size form implements this formula from
+   For plurality contests, the initial sample size form implements this formula from
    <a href="http://statistics.berkeley.edu/~stark/Preprints/gentle12.pdf">AGI</a>:
 </p>
 
-<p class="center startingSampleNotes notes">
-     <em>n<sub>0</sub></em> = <em> -2g log(a)/((m + 2g(r<sub>1</sub>log(1-1/(2g)) +
-                       r<sub>2</sub>log(1 - 1/g) + s<sub>1</sub>log(1+1/(2g)) + s<sub>2</sub>log(1+1/g))))</em>
+<p class="startingSampleNotes notes">
+$$ 
+n_0 = -2g \log(a)/((m + 2g(r_1 \log(1-1/(2g)) + r_2 \log(1 - 1/g) + s_1 \log(1+1/(2g)) + s_2 \log(1+1/g)))) 
+$$
 </p>
 
 <p class="startingSampleNotes notes">
-   with <em>m</em> equal to the diluted margin, <em>a</em> equal to the risk limit, <em>g</em> = 1.03905,
-   <em>r<sub>1</sub></em> the expected rate of 1-vote overstatements per ballot,
-   <em>r<sub>2</sub></em> the expected rate of 2-vote overstatements per ballot,
-   <em>s<sub>1</sub></em> the expected rate of 1-vote understatements per ballot, and
-   <em>s<sub>2</sub></em> the expected rate of 2-vote understatements per ballot.
-   The diluted margin is the smallest margin in votes, divided by the total number of ballots
-   cast, including undervoted and overvoted ballots.
+   with \(m\) equal to the diluted margin, \(a\) equal to the risk limit, \(g  = 1.03905\),
+   \(r_1\) the expected rate of 1-vote overstatements per ballot,
+   \(r_2\) the expected rate of 2-vote overstatements per ballot,
+   \(s_1\) the expected rate of 1-vote understatements per ballot, and
+   \(s_2\) the expected rate of 2-vote understatements per ballot.
+   The diluted margin is the smallest margin in votes, divided by the total number of ballot cards
+   cast, including undervoted and overvoted ballot cards.
 </p>
 
 <p class="startingSampleNotes notes">
@@ -1210,49 +1340,216 @@ var manifest = null;
   Depending on which checkboxes are checked, the expected numbers are either rounded to the nearest whole
   number, or rounded up.
   Then those numbers of discrenpancies are plugged into the stopping rule described
-  below, to determine how many ballots would have to be audited if the estimated number of differences
+  below, to determine how many ballot cards would have to be audited if the estimated number of differences
   of each type were to be observed in the sample.
   That number is then used once again to estimate the number of differences of each type the sample would contain;
   the results are rounded to the nearest integer and plugged into the stopping rule a second time.
   The result is then the starting sample size.
 </p>
 
+<p><a href="#" class="toggleSupermajorityNotes" name="super-majority-notes">Show explanation of auditing supermajority contests.</a></p>
+
+<p class="supermajorityNotes notes">
+  For super-majority contests, the calculations are a bit different.
+</p>
+
+<p class="supermajorityNotes notes">
+  Let's label the two candidates &quot;yes&quot; and &quot;no.&quot;
+  &quot;Yes&quot; needs to have a fraction \(f\) of the valid votes
+  to win.
+  If &quot;yes&quot; falls short of that, &quot;no&quot; wins.
+  Suppose &quot;yes&quot; was reported to have won:
+</p>
+
+<p class="center supermajorityNotes notes">
+    \( (\mbox{yes votes}) \ge f \times (\mbox{yes votes } + \mbox{ no votes}) \).
+</p>
+
+<p class="center supermajorityNotes notes">
+    Then,  \( (\mbox{yes votes}) \ge \frac{f}{1-f} (\mbox{no votes}) \).
+</p>
+
+<p class="center supermajorityNotes notes">
+    The &quot;margin&quot; is   \( (\mbox{yes votes}) - \frac{f}{1-f} (\mbox{no votes}) \).
+</p>
+
+<p class="supermajorityNotes notes">
+    The auditing method that is the basis for the comparison audit method in
+    AGI is derived in
+    Stark, P.B., 2010.
+    Super-Simple Simultaneous Single-Ballot Risk-Limiting Audits, EVT/WOTE
+    <a href="https://www.usenix.org/legacy/event/evtwote10/tech/full_papers/Stark.pdf">
+    https://www.usenix.org/legacy/event/evtwote10/tech/full_papers/Stark.pdf</a>.
+    It tests the hypothesis that the total error in the interpretation of 
+    all ballot cards does not exceed the margin, on the assumption that the
+    overstatement error on any particular card cannot be larger than 2.
+    It can thus be used to audit supermajority contests if they can be translated
+    to the same statistical problem.
+    That turns out just to require rescaling the &quot;margin&quot; appropriately
+    and counting discrepancies in a manner consistent with that rescaling.
+</p>
+
+<p class="supermajorityNotes notes">
+    We first re-scale this margin so that the largest overstatement a CVR can have is
+    2.
+    The largest possible discrepancy is to tabulate a &quot;no&quot; on the ballot
+    card as a &quot;yes&quot; vote in the CVR,
+    which would alter the margin by
+$$
+   1 + \frac{\mbox{f}}{1 - f} = \frac{1}{1-f} \mbox{ votes }. 
+$$
+To make this no larger than 2, we define the <em>equivalent plurality margin</em> to be:
+$$ m_y \equiv 2 \frac{(\mbox{yes votes}) - \frac{f}{1-f} \times (\mbox{no votes})}{\frac{\mbox{1}}{1 - f}}
+    = 2(1-f) (\mbox{yes votes}) - 2f \times (\mbox{no votes}).$$
+In the special case \(f = 1/2\), this is the ordinary (plurality) margin in votes.
+</p>
+
+<p class="supermajorityNotes notes">
+  Conversely, suppose &quot;yes&quot; was reported to have received less than the threshold \(f\),
+  it is equivalent to &quot;no&quot; winning a super-majority contest with required
+  winning fraction \(f' \equiv 1-f\), so the corresponding <em>equivalent plurality margin</em> is
+$$ m_n = 2(1-f') (\mbox{no votes}) - 2f' (\mbox{yes votes})
+ = 2f (\mbox{no votes}) - 2(1-f) (\mbox{yes votes}) = -m_y.$$
+ Thus the two situations are equivalent up to a sign change.
+In the special case \(f = 1/2\), this is again the ordinary (plurality) margin in votes.
+</p>
+
+<p class="supermajorityNotes notes">
+   How do we count discrepancies the audit encounters?
+   We just find their effect on \(m_y\) if &quot;yes&quot; was the reported winner or on
+   \(m_n\) if &quot;no&quot; was the reported winner.
+   Let's start with &quot;yes.&quot;
+   If the CVR has a yes vote that the ballot card does not show,
+   that contributes \(2(1-f)\) votes to the overstatement for the card;
+   if the ballot card has a yes vote that the CVR does not show, that contributes 
+   \(2(1-f)\) votes to the understatement for the card.
+   If the ballot card has a no vote that the CVR does not show,
+   that contributes \(2f\) to the overstatement for the card;
+   if the CVR has a no vote that the card does not show, that 
+   contributes \(2f\) to the understatement for the card.
+</p>
+
+<p class="supermajorityNotes notes">
+    These contributions add.
+    For instance, if the card shows a no vote but the CVR shows a yes vote, the
+    total discrepancy is an overstatement of \(2(1-f) + 2f = 2\).
+    Table 1 shows the possibilities.
+    If &quot;no&quot; is the reported winner, interchange the role of
+    understatements and overstatements (equivalently, interchange the role of CVRs and hand
+    interpretations).
+</p>
+
+<table class="supermajorityNotes notes" rules="all" name="super_majority_error_notes">
+   <tr>
+       <th>&nbsp;</th><th align="center">scenario 1</th>
+           <th align="center">scenario 2</th><th align="center">scenario 3</th><th align="center">scenario 4</th>
+           <th align="center">scenario 5</th><th align="center">scenario 6</th>
+   </tr>
+   <tr>
+       <td>CVR</td>  <td>yes</td>    <td>yes</td>              <td>undervote</td>        <td>undervote</td>   <td>no</td>      <td>no</td>
+   </tr>
+   <tr>
+       <td>Hand</td> <td>no</td>     <td>undervote</td>        <td>yes</td>              <td>no</td>          <td>yes</td>     <td>undervote</td>
+   </tr>
+   <tr>
+       <td>error</td><td>2 over</td> <td>\(2(1-f)\) over</td>  <td>\(2(1-f)\) under</td> <td>\(2f\) over</td>  <td>2 under</td> <td> \(2f\) under</td>
+   </tr>
+   <caption>
+        Table 1n: How to count discrepancies between hand interpretation and CVR 
+        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        to win and &quot;yes&quot; is the reported winner.
+        If &quot;yes&quot; is the reported loser, substitute undercounts for overcounts, and vice versa:
+        the magnitudes are the same but the sign is reversed.
+   </caption>
+</table>
+
+<p class="supermajorityNotes notes">
+    Suppose \(f \ge 1/2\), a &quot;genuine&quot; super-majority contest
+    (there are examples in U.S. primary elections where \(f = 15\%\)).
+    Then \(1 \le 2f \le 2\) and \(2(1-f) \le 1\).
+    Rounding down understatement errors and rounding up overstatement errors is conservative.
+    Thus if we count discrepancies as follows, the audit is still risk-limiting:
+</p>
+
+<table class="supermajorityNotes notes" rules="all" name="super_majority_win_error_notes">
+   <tr>
+       <th>&nbsp;</th><th align="center">scenario 1</th>
+           <th align="center">scenario 2</th><th align="center">scenario 3</th><th align="center">scenario 4</th>
+           <th align="center">scenario 5</th><th align="center">scenario 6</th>
+   </tr>
+   <tr>
+       <td>CVR</td>  <td>yes</td>    <td>yes</td>        <td>undervote</td> <td>undervote</td> <td>no</td>      <td>no</td>
+   </tr>
+   <tr>
+       <td>Hand</td> <td>no</td>     <td>undervote</td>  <td>yes</td>       <td>no</td>        <td>yes</td>     <td>undervote</td>
+   </tr>
+   <tr>
+       <td>error</td><td>2 over</td> <td>1 over</td>     <td>0</td>         <td>2 over</td>    <td>2 under</td>  <td>1 under</td>
+   </tr>
+   <caption>
+        Table 2n: A conservative way to count discrepancies between hand interpretation and CVR 
+        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        to win and &quot;yes&quot; is the reported winner.
+   </caption>
+</table>
+
+<table class="supermajorityNotes notes" rules="all" name="super_majority_lose_error_notes">
+   <tr>
+       <th>&nbsp;</th><th align="center">scenario 1</th>
+           <th align="center">scenario 2</th><th align="center">scenario 3</th><th align="center">scenario 4</th>
+           <th align="center">scenario 5</th><th align="center">scenario 6</th>
+   </tr>
+   <tr>
+       <td>CVR</td>  <td>yes</td>     <td>yes</td>       <td>undervote</td>  <td>undervote</td>  <td>no</td>     <td>no</td>
+   </tr>
+   <tr>
+       <td>Hand</td> <td>no</td>      <td>undervote</td> <td>yes</td>        <td>no</td>         <td>yes</td>    <td>undervote</td>
+   </tr>
+   <tr>
+       <td>error</td><td>2 under</td> <td>0</td>         <td>1 under</td>    <td>1 under</td>    <td>2 over</td> <td>2 over</td>
+   </tr>
+   <caption>
+        Table 3n: A conservative way to count discrepancies between hand interpretation and CVR 
+        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        to win and &quot;yes&quot; was reported to lose.
+   </caption>
+</table>
 
 <h2>Random sampling</h2>
 
 <p>
-   The next tool helps generate a pseudo-random sample of ballots.
+   The next tool helps generate a pseudo-random sample of ballot cards.
    To start,
    input a random seed with at least 20 digits (generated by rolling a 10-sided die, for instance),
-   the number of ballots from which you want a sample, and the number of ballots you want in the sample.
+   the number of ballot cards from which you want a sample, and the number of ballot cards you want in the sample.
    Further below, there is a form to help find the individual, randomly selected
-   ballots among the batches in which ballots are stored.
+   ballot cards among the batches in which ballot cards are stored.
 </p>
 
 	<form action="#" method="get">
 		<fieldset>
-			<legend>Pseudo-Random Sample of Ballots</legend>
+			<legend>Pseudo-Random Sample of Ballot Cards</legend>
 			<div>
 				<label for="seedValue">Seed:</label>
 				<input type="text" size="25" name="seedValue" id="seedValue" onblur="clearList();"
 				       value="Input seed here" />
 			</div>
 			<div>
-			    <label for="nObj">Number of ballots:</label>
+			    <label for="nObj">Number of ballot cards:</label>
 			    <input type="text" size="10" name="nObj" id="nObj" onblur="clearList();" value="1000"/>
             </div>
 			<div>
                  <label for="samNum">Current sample number:</label>
 			     <input type="text" size="10" name="samNum" id="samNum" editable="false" value="1"/>
 			     <br />
-			     <label for="samMany">Draw this many ballots:</label>
+			     <label for="samMany">Draw this many ballot cards:</label>
 			     <input type="text" size="10" name="samMany" id="samMany" value="1"/>
 			     <input type="button" name="nextItem" id="nextItem" onclick="nextSample();" value="draw sample" />
 			     <input type="button" name="reset" id="reset" onclick="resetMe();" value="reset" />
 			</div>
 			<br />
 			<div>
-			   <label for="list">Ballots selected:</label>
+			   <label for="list">Ballot cards selected:</label>
 			   <input type="checkbox" name="showSequence" id="showSequence" value="showSequence" checked onChange="writeList()" />
 			   <label for="showSequence">show sequence numbers</label>
 
@@ -1262,15 +1559,15 @@ var manifest = null;
 			   <textarea rows="10" cols="80" name="list" id="list" readonly="readonly"></textarea>
 			</div>
 			<div>
-			   <label for="sortedList">Ballots selected, sorted:</label><br />
+			   <label for="sortedList">Ballot cards selected, sorted:</label><br />
 			   <textarea rows="10" cols="80" name="sortedList" id="sortedList" readonly="readonly"></textarea>
 			</div>
 			<div>
-			   <label for="sortedDedupeList">Ballots selected, sorted, duplicates removed:</label><br />
+			   <label for="sortedDedupeList">Ballot cards selected, sorted, duplicates removed:</label><br />
 			   <textarea rows="10" cols="80" name="sortedDedupeList" id="sortedDedupeList" readonly="readonly"></textarea>
 			</div>
 			<div>
-			   <label for="duplicates">Repeated ballots:</label><br />
+			   <label for="duplicates">Repeated ballot cards:</label><br />
 			   <textarea rows="10" cols="80" name="duplicates" id="duplicates" readonly="readonly"></textarea>
 			</div>
 		</fieldset>
@@ -1292,13 +1589,13 @@ var manifest = null;
    Clicking &quot;draw sample&quot; successively adds one to &quot;Sample number&quot; and
    recomputes &quot;Hashed value&quot; and &quot;Randomly selected item&quot;
    &quot;Draw this many objects&quot; times.
-   Selected items accumulate in &quot;Ballots selected&quot; (and &quot;Ballots selected, sorted&quot;),
+   Selected items accumulate in &quot;Ballot cards selected&quot; (and &quot;Ballot cards selected, sorted&quot;),
    which reset if the seed or the number of objects changes.
-   The same ballot might be selected more than once.
+   The same ballot card might be selected more than once.
    Duplicates are removed in
-   &quot;Ballots selected, duplicates removed.&quot;
-   Ballots selected more than once, and the frequencies of those ballots, are in
-   &quot;Repeated ballots.&quot;
+   &quot;Ballot cards selected, duplicates removed.&quot;
+   Ballot cards selected more than once, and the frequencies of those ballot cards, are in
+   &quot;Repeated ballot cards.&quot;
    Clicking the &quot;reset&quot; button clears the history but leaves the seed.
 </p>
 
@@ -1344,19 +1641,19 @@ var manifest = null;
 
 
 <h2>
-   Find ballots using a ballot manifest
+   Find ballot cards using a ballot manifest
 </h2>
 
 <p>
-   Generally, ballots will be stored in batches, for instance, separated by precinct and mode of voting.
-   To make it easier to find individual ballots, it helps to have a <em>ballot manifest</em>
-   that describes how the ballots are stored.
-   For instance, we might have 1,000 ballots stored as follows:
+   Generally, ballot cards are stored in batches, for instance, separated by precinct and mode of voting.
+   To make it easier to retrieve individual ballot cards for auditing, it helps to have a <em>ballot manifest</em>
+   that describes how the ballot cards are stored.
+   For instance, we might have 1,000 ballot cards stored as follows:
 </p>
 
 <table>
    <tr>
-      <th>Batch label</th><th>ballots</th>
+      <th>Batch label</th><th>ballot cards</th>
    </tr>
    <tr>
       <td>Polling place precinct 1</td> <td>130</td>
@@ -1377,22 +1674,23 @@ var manifest = null;
 
 
 <p>
-   If ballot 500 is selected for audit, which ballot is that?
+   If ballot card 500 is selected for audit, which card is that?
    If we take the listing of batches in the order given by the manifest, and we
-   require that within each batch, the ballots are in an order that does not
-   change during the audit, then the 500th ballot is the 86th ballot among the vote by mail ballots
+   require that within each batch, the ballot cards are in an order that does not
+   change during the audit, then the 500th ballot card is the 86th ballot card among the 
+   vote by mail ballot cards
    for precinct 2:
-   The first three batches have a total of 130+172+112 = 414 ballots.
-   The first ballot in the fourth batch is ballot 415.
-   Ballot 500 is the 86th ballot in the fourth batch.
+   The first three batches have a total of 130+172+112 = 414 ballot cards.
+   The first card in the fourth batch is ballot card 415.
+   Ballot card 500 is the 86th card in the fourth batch.
 </p>
 
 <p>
-   The ballot look-up tool transforms a list of ballot numbers and a ballot manifest
-   into a list of ballots in each batch.
+   The ballot look-up tool transforms a list of ballot card numbers and a ballot manifest
+   into a list of ballot cards in each batch.
    Batch labels should not contain commas.
-   Use a comma to separate each batch label from the number of ballots in that batch
-   (or the range of ballot numbers or the set of ballot identifiers&mdash;see below).
+   Use a comma to separate each batch label from the number of ballot cards in that batch
+   (or the range of ballot card numbers or the set of ballot card identifiers&mdash;see below).
    The manifest should have one line per batch and no empty lines.
 </p>
 
@@ -1412,20 +1710,24 @@ Vote by mail precinct 3, 188
 </p>
 
 <p>
-   Some jurisdictions number the ballots cast in an election.
-   If all the ballots in an election are numbered sequentially, the numbers on the ballots that contain
+   Some jurisdictions number the ballot cards cast in an election.
+   If all the ballot cards in an election are numbered sequentially, the numbers on the ballot cards that contain
    a particular contest might not be sequential.
    For instance, an election might cover precincts 1, 2, and 3, but
    only voters in precincts 1 and 3 are eligible to vote in the contests to be audited with the current sample.
-   In the previous example, suppose that the jurisdiction had stamped numbers on all the ballots, sequentially, so that
-   the ballots from the polling place in precinct 1 were numbered 1 to 130, the vote by mail ballots from precinct 1 were
-   numbered 131 to 302, the ballots from the polling place in precinct 2 were numbered 303 to 414, and so on,
+   If the ballots have more than one card, cards containing a given contest in general will not be numbered
+   sequentially.
+   In the previous example, suppose that the ballot consisted of a single card and that
+   the jurisdiction had stamped numbers on all the cards, sequentially, so that
+   the ballot cards from the polling place in precinct 1 were numbered 1 to 130, the vote by mail ballot
+   cards from precinct 1 were
+   numbered 131 to 302, the ballot cards from the polling place in precinct 2 were numbered 303 to 414, and so on,
    as summarized in the following table:
 </p>
 
 <table>
    <tr>
-      <th>Batch label</th><th>ballot range</th>
+      <th>Batch label</th><th>ballot card range</th>
    </tr>
    <tr>
       <td>Polling place precinct 1</td> <td>1 to 130</td>
@@ -1454,21 +1756,22 @@ Vote by mail precinct 3, 188
 </table>
 
 <p>
-   Since the ballots already have numbers on them, it makes sense to look them up using those numbers.
-   If we were auditing a collection of contests that included only precincts 1 and 3, the ballots subject to audit
-   would be the 686 ballots labeled 1 to 130, 131 to 302, 616 to 812, and 813 to 994, and
+   Since the ballot cards already have numbers on them, it makes sense to look them up using those numbers.
+   If we were auditing a collection of contests that included only precincts 1 and 3, the ballot
+   cards subject to audit
+   would be the 686 card labeled 1 to 130, 131 to 302, 616 to 812, and 813 to 994, and
    995, 996, 998, and 1000.
    In this case, the ballot manifest would include <em>only</em> the six batches that comprise precincts 1 and 3,
-   not all eight batches; there are only 686 ballots in these batches.
-   Each line in the manifest would consist of a batch label and a range of ballot numbers,
+   not all eight batches; there are only 686 ballot cards in these batches.
+   Each line in the manifest would consist of a batch label and a range of ballot card numbers,
    where the range is denoted by a colon,
-   or of a batch label and a set of ballot identifiers in parentheses, separated by spaces.
-   Ballot ranges cannot have gaps: There can be no missing numbers within the range for
+   or of a batch label and a set of ballot card identifiers in parentheses, separated by spaces.
+   Ballot card ranges cannot have gaps: There can be no missing numbers within the range for
    any single batch.
    (If there is in fact a gap, input the numbers as a set of identifiers, rather than as a range.)
-   Again, separate the label from the range or set of ballot numbers by a comma.
+   Again, separate the label from the range or set of ballot card numbers by a comma.
    The label must not contain any commas,
-   and the range of ballot numbers or set of identifiers must not contain commas.
+   and the range of ballot card numbers or set of identifiers must not contain commas.
    In this example, we would enter the ballot manifest as follows:
 </p>
 
@@ -1484,30 +1787,30 @@ Provisional precinct 3, (995 999)
 </p>
 
 <p>
-   The total number of ballots in the manifest must equal the number cast in the contests that are to be
+   The total number of ballot cards in the manifest must equal the number cast in the contests that are to be
    audited together using the sample (686 in this example).
 </p>
 
 	<form action="#" method="get">
 		<fieldset>
-			<legend>Ballot look-up tool</legend>
+			<legend>Ballot card look-up tool</legend>
 			<div>
 			    <label for="manifest">Ballot manifest: Each line must have a batch label, a comma, and one of the following:<br />
-			                          &nbsp;&nbsp;(i) the number of ballots in the batch <br />
+			                          &nbsp;&nbsp;(i) the number of ballot cards in the batch <br />
 			                          &nbsp;&nbsp;(ii) a range specified with a colon (e.g., 131:302), or <br />
-			                          &nbsp;&nbsp;(iii) a list of ballot identifiers within parentheses, separated by spaces (e.g., (996 998 1000)).<br />
+			                          &nbsp;&nbsp;(iii) a list of ballot card identifiers within parentheses, separated by spaces (e.g., (996 998 1000)).<br />
 			                          Each line should have exactly one comma.<br />
 			                          </label><br />
 				<textarea rows="25" cols="80" name="manifest" id="manifest"></textarea>
 			</div>
 			<div>
-			   <label for="ballotList">Ballots to look up (separated by commas):</label><br />
+			   <label for="ballotList">Ballot cards to look up (separated by commas):</label><br />
 			   <textarea rows="10" cols="80" name="ballotList" id="ballotList" ></textarea>
 			</div>
 			<div>
 			    <input type="button" id="lookUpBallot" name="lookUpBallot"
 			       onclick="lookUpBallots($('#ballotList').val().split(',').sort(numberLessThan), true);"
-			       value="look up ballots" />
+			       value="look up ballot cards" />
 		    </div>
 			<div>
 			   <label for="lookUp">Sorted lookup table:</label><br />
@@ -1517,13 +1820,13 @@ Provisional precinct 3, (995 999)
 
 </form>
 
-<h2>Should more ballots be audited?</h2>
+<h2>Should more ballot cards be audited?</h2>
 
 <p>
-   The stopping sample size tool determines whether enough ballots have been examined for the audit to stop,
-   and if not, estimates how many more ballots will need to be audited.
+   The stopping sample size tool determines whether enough cards have been examined for the audit to stop,
+   and if not, estimates how many more will need to be audited.
    The answer depends on the risk limit, the margin, and the differences between the cast vote
-   records and the manual inspection of the ballots in the sample.
+   records and the manual inspection of the ballot cards in the sample.
 </p>
 
 <p>
@@ -1531,7 +1834,7 @@ Provisional precinct 3, (995 999)
   some loser in some contest.
   Suppose we are auditing a mayoral contest with four candidates, a city council contest that allows voting
   for up to three of ten candidates, and
-  a simple measure that involves voting either &quot;yes&quot; or &quot;no.&quot;
+  a simple measure (<em>not</em> a supermajority contest) that involves voting either &quot;yes&quot; or &quot;no.&quot;
   The mayoral contest has three pairwise margins: The winner can be paired with each of
   the three losers.
   The city council contest has twenty-one pairwise margins: each of the three winners can be
@@ -1565,7 +1868,8 @@ Provisional precinct 3, (995 999)
   Since there is an understatement only if changing the machine interpretation of the ballot
   to match the hand interpretation would increase <em>every</em> pairwise margin, understatements
   are quite rare.
-  Understatements do not call the outcome into question, so they do not increase the
+  Even though understatements indicate that the voting system misinterpreted votes,
+  they do not call the outcome into question, so they do not increase the
   sample size required to confirm the outcome.
 </p>
 
@@ -1585,7 +1889,7 @@ Provisional precinct 3, (995 999)
 </p>
 
 <p>
-   As an example, suppose that we are auditing five contests simultaneously.
+   As an example, suppose that we are auditing five plurality contests simultaneously.
    Tables&nbsp;1 and&nbsp;2 below show two hypothetical CVRs and manual interpretations of the
    same ballots.
 </p>
@@ -1607,7 +1911,7 @@ Provisional precinct 3, (995 999)
    </tr>
    <caption>
         Table 1: Hypothetical CVR and hand interpretation
-        of a ballot that contains four of five contests under audit.
+        of a ballot that contains four of five plurality contests under audit.
         Overall, the ballot has an overstatement of 2 votes, because that is the largest overstatement of
         any margin in any of the contests.
    </caption>
@@ -1620,7 +1924,7 @@ Provisional precinct 3, (995 999)
         Similarly, if there are two or more winners in the contest and only one loser, this contest has an understatement
         of only one vote.
         If there are at least two winners and at least two losers, there is no understatement in this contest, because
-        at least one pairwise margin was not affected at all by the difference.
+        at least one pairwise margin was not affected by the difference.
         Regardless, the <em>ballot</em> has an overstatement of 2 votes, because the ballot has an overstatement of 2 votes
         in contest 2.
    </p>
@@ -1647,19 +1951,68 @@ Provisional precinct 3, (995 999)
    </caption>
 </table>
 
+<p>
+   Counting discrepancies for super-majority contests is different.
+   The following two tables give a conservative approach.
+</p>
+
+<table rules="all" name="super_majority_win_error">
+   <tr>
+       <th>&nbsp;</th><th align="center">scenario 1</th>
+           <th align="center">scenario 2</th><th align="center">scenario 3</th><th align="center">scenario 4</th>
+           <th align="center">scenario 5</th><th align="center">scenario 6</th>
+   </tr>
+   <tr>
+       <td>CVR</td>  <td>yes</td>    <td>yes</td>        <td>undervote</td> <td>undervote</td> <td>no</td>      <td>no</td>
+   </tr>
+   <tr>
+       <td>Hand</td> <td>no</td>     <td>undervote</td>  <td>yes</td>       <td>no</td>        <td>yes</td>     <td>undervote</td>
+   </tr>
+   <tr>
+       <td>error</td><td>2 over</td> <td>1 over</td>     <td>0</td>         <td>2 over</td>    <td>2 under</td>  <td>1 under</td>
+   </tr>
+   <caption>
+        Table 3: A conservative way to count discrepancies between hand interpretation and CVR 
+        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        to win and &quot;yes&quot; is the reported winner.
+   </caption>
+</table>
+
+<table rules="all" name="super_majority_lose_error">
+   <tr>
+       <th>&nbsp;</th><th align="center">scenario 1</th>
+           <th align="center">scenario 2</th><th align="center">scenario 3</th><th align="center">scenario 4</th>
+           <th align="center">scenario 5</th><th align="center">scenario 6</th>
+   </tr>
+   <tr>
+       <td>CVR</td>  <td>yes</td>     <td>yes</td>       <td>undervote</td>  <td>undervote</td>  <td>no</td>     <td>no</td>
+   </tr>
+   <tr>
+       <td>Hand</td> <td>no</td>      <td>undervote</td> <td>yes</td>        <td>no</td>         <td>yes</td>    <td>undervote</td>
+   </tr>
+   <tr>
+       <td>error</td><td>2 under</td> <td>0</td>         <td>1 under</td>    <td>1 under</td>    <td>2 over</td> <td>2 over</td>
+   </tr>
+   <caption>
+        Table 4: A conservative way to count discrepancies between hand interpretation and CVR 
+        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        to win and &quot;yes&quot; was reported to lose.
+   </caption>
+</table>
+
 </div>
 
 <p>
-  To determine whether the audit can stop, enter the number of ballots in the sample
+  To determine whether the audit can stop, enter the number of ballot cards in the sample
   with overstatements or understatements of one or two votes, then
   click &quot;Calculate.&quot;
   If the sample size is not large enough to confirm the outcome based on the
   number of differences of each type observed, the value of
   &quot;If no more differences are observed&quot; will be larger than
   the current sample size, and the value of
-  &quot;Estimated additional ballots if difference rate stays the same&quot;
+  &quot;Estimated additional ballot cards if difference rate stays the same&quot;
   will be greater than zero.
-  That value is the estimated number of additional ballots that will need
+  That value is the estimated number of additional ballot cards that will need
   to be audited to confirm the outcome at the desired risk limit,
   assuming that the rate of one and two-vote understatements and overstatements
   does not change as the sample expands.
@@ -1672,16 +2025,16 @@ Provisional precinct 3, (995 999)
 			<legend>Stopping sample size and escalation</legend>
 			  <div>
 				<fieldset>
-<!-- 				   <legend>Discrepant Ballots</legend>
+<!-- 				   <legend>Discrepant Ballot cards</legend>
 				   <div id="ballotErrList" class="ballotErrList">
 				   </div>
 				   <hr align="left" />
 				   <div id="addRemoveBallots">
-				     <input type="button" id="addBallotButton" value="Add discrepant ballot">
-                     <input type="button" id="removeBallotButton" value="Remove last ballot">
+				     <input type="button" id="addBallotButton" value="Add discrepant card">
+                     <input type="button" id="removeBallotButton" value="Remove last card">
                    </div>
 -->
-                      <span class="label" id="sizeSoFar">Ballots audited so far: 0</span>
+                      <span class="label" id="sizeSoFar">Ballot cards audited so far: 0</span>
                       <hr align="left"/>
                       <label for="oneOver">1-vote overstatements:</label>
 			          <input type="text" size="10" name="oneOver" id="oneOver" value="0"
@@ -1716,7 +2069,7 @@ Provisional precinct 3, (995 999)
 			     <br />
 			     <span class="label" id="estStopSampleSize"> If differences continue at the same rate:  &hellip; . </span>
 			     <br />
-			     <span class="label" id="additionalBallots"> Estimated additional ballots if difference
+			     <span class="label" id="additionalBallots"> Estimated additional ballot cards if difference
 			                                                 rate stays the same: &hellip; </span>
 			</div>
 		</fieldset>
@@ -1765,7 +2118,7 @@ Provisional precinct 3, (995 999)
 <p>
 <small>P.B. Stark, <a href="statistics.berkeley.edu/~stark">statistics.berkeley.edu/~stark</a>.
 http://statistics.berkeley.edu/~stark/Java/Html/auditTools.htm
-Last modified 26 February 2020.</small>
+Last modified 7 June 2020.</small>
 </p>
 
 </body>
