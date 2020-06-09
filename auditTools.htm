@@ -503,6 +503,9 @@ MathJax.Hub.Config({
                     n0 = nmin(alpha, gamma, m, o1, o2, u1, u2);
                 }
             }
+            if (n0 >= parseInt($("#nBallots").val())) {  // expect full hand count
+                n0 = fhcText;
+            }
         }
         return(n0);
     }
@@ -1488,7 +1491,7 @@ In the special case \(f = 1/2\), this is again the ordinary (plurality) margin i
    </tr>
    <caption>
         Table 2n: A conservative way to count discrepancies between hand interpretation and CVR 
-        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        for a super-majority contest when it takes a fraction \(f \ge 1/2\) of the valid votes
         to win and &quot;yes&quot; is the reported winner.
    </caption>
 </table>
@@ -1510,10 +1513,19 @@ In the special case \(f = 1/2\), this is again the ordinary (plurality) margin i
    </tr>
    <caption>
         Table 3n: A conservative way to count discrepancies between hand interpretation and CVR 
-        for a super-majority contest when it takes a fraction \(f\) of the valid votes
+        for a super-majority contest when it takes a fraction \(f \ge 1/2\) of the valid votes
         to win and &quot;yes&quot; was reported to lose.
    </caption>
 </table>
+
+<p class="supermajorityNotes notes">
+    Thus the same software can be used to audit super-majority contests.
+    But at the expense of slightly more bookkeeping to keep track of fractional overstatements and understatements
+    as shown in Table 1n, the audit would be sharper.
+    However, the approach in SHANGRLA is sharper still:
+    Stark, P.B., 2020. Sets of Half-Average Nulls Generate Risk-Limiting Audits: SHANGRLA,
+    <em>Voting '20</em>, to appear. Preprint: <a href="http://arxiv.org/abs/1911.10035">http://arxiv.org/abs/1911.10035}</a>
+</p>
 
 <h2>Random sampling</h2>
 
@@ -2118,7 +2130,7 @@ Provisional precinct 3, (995 999)
 <p>
 <small>P.B. Stark, <a href="statistics.berkeley.edu/~stark">statistics.berkeley.edu/~stark</a>.
 http://statistics.berkeley.edu/~stark/Java/Html/auditTools.htm
-Last modified 7 June 2020.</small>
+Last modified 9 June 2020.</small>
 </p>
 
 </body>
