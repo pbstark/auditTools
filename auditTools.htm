@@ -12,8 +12,8 @@
 
 
 <script language="JavaScript1.4" type="text/javascript"><!--
-    pageModDate = "22 November 2020 13:45 PST";
-    // Copyright (c) 1997--2020 by P.B. Stark, statistics.berkeley.edu/~stark
+    pageModDate = "9 April 2021 13:08 PDT";
+    // Copyright (c) 1997--2021 by P.B. Stark, statistics.berkeley.edu/~stark
     // License CC-BY 2.0 https://creativecommons.org/licenses/by/2.0/
 // -->
 </script>
@@ -684,7 +684,7 @@ MathJax.Hub.Config({
                   nf = nminFromRates(risk, gamma, m, r1, r2, s1, s2, $("#roundUp1").prop('checked'), $("#roundUp2").prop('checked'));
                   $("#stopSampleSize").text(' If no more differences are observed: ' + n.toString() + '. ');
                   $("#estStopSampleSize").html(' If differences continue at the same rates: ' + nf.toString() + '. ');
-                  $("#additionalBallots").html(' Estimated additional ballots if difference rates stay the same: ' + Math.max(0, nf - n).toString() + '.');
+                  $("#additionalBallots").html(' Estimated additional ballots if difference rates stay the same: ' + Math.max(0, nf - samSize).toString() + '.');
                   if (samSize >= n) {
                        $('#auditComplete').html('&nbsp;Audit complete&nbsp;');
                        $('#auditComplete').css('backgroundColor','#5E5');
